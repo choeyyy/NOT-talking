@@ -120,6 +120,8 @@ POST …/publish → dungeon_scripts (live) + dungeon_entrances? + announcement
 
 **相关 capability（草案）：** `spirit-guild` — 见 `specs/spirit-guild/spec.md`
 
+**完整对话归档：** `conversation-log.md`（37 轮，含 OpenSpec 探索至精灵协会/运行时剧本讨论）
+
 ---
 
 ## C. 实现前技术项（原有）
