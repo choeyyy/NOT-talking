@@ -51,6 +51,7 @@
 - [ ] 5.7 `/admin/chat-logs` + `/admin/behavior-logs` (+ dungeon log summary)
 - [ ] 5.8 `/admin/son` wallet, grant audit, settings
 - [ ] 5.9 `/admin/gnome-guild` link (shared guild UI with workshop)
+- [ ] 5.10 **`/admin/dungeons`** — Creator edit drafts + published `script_json`; T0 publish/hotfix (no gnome required)
 - [ ] 5.10 Preview links to all adventurer routes as Creator
 - [ ] 5.11 Apply TRPG copy to all admin labels and actions
 
@@ -130,9 +131,12 @@
 
 ## 14. World NPCs (world-npcs) — Phase 1.5c
 
-- [ ] 14.1 Add `world-npc-manifest.ts` with static NPCs only
-- [ ] 14.2 Build JRPG static dialogue UI for generic NPCs
-- [ ] 14.3 Add Creator's Son interactable in hub-plaza opening Son chat
+- [ ] 14.1 Bootstrap `world_npcs` from seed; runtime load + cache invalidate on admin save
+- [ ] 14.1b **`/admin/npcs`** — dialogue + **player address** fields; T0 hot update
+- [ ] 14.1c Optional WS `world_npcs_updated` for in-scene live refresh
+- [ ] 14.2 Seed **`li_luang`** (Li-Luang; player address seed **乖孙**; dialogue theme AA — content via admin)
+- [ ] 14.3 Build JRPG static dialogue UI for generic NPCs
+- [ ] 14.4 Add Creator's Son interactable in hub-plaza opening Son chat
 
 ## 14b. Creator's Son Agent (creator-son-agent) — Phase 1.5c
 
@@ -277,6 +281,7 @@
 > 见 `discussion-log.md` §I 与 `specs/world-tavern/spec.md`。
 
 - [ ] 27.1 `tavern_table` interactables in `tavern-hall` Tiled map; seat/unseat state
+- [ ] 27.1a Ensure **`li_luang`** seeded; dialogue edited only via `/admin/npcs`
 - [ ] 27.2 WS room `room:tavern:{sceneId}:{tableId}`; send only while seated
 - [ ] 27.3 Table chat UI distinct from DM / Son / oracle; strangers allowed same table
 - [ ] 27.4 Ephemeral delivery (memory/TTL only); **no** `messages` rows; clear client on unseat

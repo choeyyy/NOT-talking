@@ -92,9 +92,11 @@
 | 层 | 来源 | 用途 |
 |----|------|------|
 | Bootstrap | 仓库内 **示例** JSON + seed migration | 首启可玩样本；**不是**地精发布路径 |
-| Runtime | DB `dungeon_scripts` + `dungeon_entrances` | 工程地精产出 → 造物主批准 → **即时生效** |
+| Runtime | DB `dungeon_scripts` + `dungeon_entrances` | 地精草案 → 造物主发布 **或** 造物主 `/admin/dungeons` 手改 → **T0 即时生效** |
 
 **工程地精只做：** 写入/更新 `dungeon_script_drafts.script_json` → 批准后经 **Publish API** 晋升到 `dungeon_scripts`（version++），可选写入 `dungeon_entrances`（大世界入口），更新公告。**不**改 `.ts` manifest、**不**触发 deploy/restart。
+
+**造物主手改：** 同一套 DB + schema 校验；可在地精休眠时编辑草案或已发布本并 **热更**（见 `dungeons` · Creator manual script edit）。
 
 **服务端：** `DungeonScriptLoader` 按 `dungeon_id` 读 DB；短 TTL 内存缓存 + publish 时 **显式 invalidate**。进行中的 `dungeon_runs` **钉住** 开局时的 `script_version`，避免热更打断跑团。
 
@@ -333,13 +335,28 @@ attrs → trpg 检定修正 + 掉落概率修正（药水等）
 
 ### 已定方向
 
-1. **地点：** 大世界 **酒馆**（manifest `tavern-hall`，如 **余烬酒馆**）；地图物件 **`tavern_table`**（带 `tableId`）
+1. **地点：** manifest scene id **`tavern-hall`**（spec 不另起酒馆专名）；物件 **`tavern_table`**（`tableId`）
 2. **入座：** 玩家与空椅交互 → **坐桌**；离桌 / 走远 / 断线 → **离席**
 3. **对话范围：** **同一桌**（同 `sceneId` + 同 `tableId`）内，**无论 `canSee` / 是否相识**，均可 **同桌聊天**
 4. **临时性：** **不写 `messages` 表**；冒险者 **无持久记录**、离桌清空、再坐不恢复；**不能** 借此开 persistent DM
 5. **同桌可见名：** 就座期间同桌可见 **display name**（仅桌内 UI）；**不** 获得地图互见、手机联系人、展馆权限
 6. **通道：** WS room `room:tavern:{sceneId}:{tableId}`；与神谕、之子、持久 DM **分 UI**
 7. **人数：** 每桌 **最多 2 人**；满座拒入并提示
+8. **酒保 Li-Luang：** grandmother · 对话主题 drinks are **AA** · 对玩家称呼 **乖孙** — 均在 `/admin/npcs` 配（**说什么** + **怎么称呼**），T0 热更
+
+### NPC 后台热更（2026-08-11）
+
+- 字段：**对玩家说的话**（dialogue）、**对玩家的称呼**（player address）、sprite、位置
+
+- **`/admin/npcs` 保存** → 写 DB → invalidate → **不重启**
+- 冒险者：**下次对话**必为新语录；同场景可选 **WS 推送** 即时刷新 sprite/台词
+- 与地精 `dungeon_scripts` 同属 **T0** 档
+
+### 副本剧本 · 造物主可改 · T0 热更（2026-08-11）
+
+- 地精写的草案 → `dungeon_script_drafts`；**发布** → `dungeon_scripts`（**不重启**）
+- 造物主可在 **`/admin/dungeons`**（或地精协会草案页）**直接改 JSON**，再点发布/热更
+- **地精休眠时也能改**；与 NPC 一样 cache invalidate；**进行中 run 钉 `script_version`**
 
 ### 鸭心结缘（玩家自结识 · 2026-08-11）
 

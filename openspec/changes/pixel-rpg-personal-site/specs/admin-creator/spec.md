@@ -40,10 +40,12 @@ The Creator admin area SHALL include at minimum these modules (routes may be gro
 | **世界公告** | `/admin/announcements` | Announcement CRUD |
 | **像素工坊** | `/admin/studio` | Scene build + global asset library (embed `pixel-studio`) |
 | **场景 / 入口** | `/admin/scenes` | Scene manifest, dungeon entrances, publish |
+| **NPC** | `/admin/npcs` | Dialogue (对玩家说的话), **player address** (对玩家的称呼), sprite, placement — T0 hot update |
 | **聊天 Log** | `/admin/chat-logs` | DM history audit |
 | **行为 Log** | `/admin/behavior-logs` | `player_behavior_log`, dungeon telemetry summary |
 | **之子** | `/admin/son` | `son_wallet_gold`, grant audit, Son agent settings |
-| **地精协会** | `/admin/gnome-guild` | Guild chat, drafts, publish (same as Creator `/workshop` guild when enabled) |
+| **地精协会** | `/admin/gnome-guild` | Guild chat, drafts, publish; Creator may **hand-edit** drafts |
+| **副本剧本** | **`/admin/dungeons`** | Edit drafts + published scripts (`dungeon_scripts`); **T0 hotfix** publish |
 | **长身人修会** | `/admin/tall-folk` | Runtime patches (T0), deploy queue (T2), diagnostics from logs |
 | **Agent 安全** | `/admin/agents` | Kill switch, rate limit config, circuit breaker status, audit tail |
 | **赋活 / Life** | `/admin/life` | V2+ NPC/object grants |

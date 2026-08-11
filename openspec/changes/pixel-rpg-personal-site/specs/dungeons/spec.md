@@ -380,7 +380,37 @@ Script publication from the Gnome Guild or Creator admin SHALL write only to the
 - **WHEN** the Creator approves a pending draft for publish
 - **THEN** the server validates JSON schema, upserts `dungeon_scripts` with incremented version, optionally upserts entrances, upserts announcement, marks draft published, and invalidates loader cache in one transaction without restart
 
-### Requirement: Dungeon run telemetry logging
+### Requirement: Creator manual script edit in admin (T0 hot update)
+
+The Creator SHALL edit dungeon scripts in admin **without** going through gnome chat when desired. This uses the same runtime catalog as gnome publish (**T0** — DB + cache invalidate, no restart).
+
+| Action | Where | Result |
+|--------|-------|--------|
+| **Edit draft** | `/admin/gnome-guild` or **`/admin/dungeons`** | Updates `dungeon_script_drafts`; not live until publish |
+| **Publish / hotfix** | Same + confirm action | Upserts `dungeon_scripts` (`version++`), invalidate loader; **new runs only** |
+| **Adjust live script** | Edit published row or draft → publish | Same hotfix rules; in-progress runs stay pinned |
+
+Gnome-authored and Creator-hand-edited scripts share one schema validator (`script-schema.ts` / `house-coc` tiers). The Creator MAY change any field gnomes can (nodes, DC, text, rewards, `partyVariants`, etc.).
+
+#### Scenario: Creator edits gnome draft before publish
+
+- **WHEN** the Creator opens a `dungeon_script_drafts` row in admin and saves JSON changes
+- **THEN** the draft updates; live `dungeon_scripts` unchanged until Creator publish confirm
+
+#### Scenario: Creator hotfixes published script without gnomes awake
+
+- **WHEN** the Creator edits and publishes a new version of an existing `dungeon_scripts` row from admin while gnome guild chat is closed
+- **THEN** `dungeon_scripts.version` increments, cache invalidates, and new dungeon runs load the updated script immediately
+
+#### Scenario: Creator hotfix does not disrupt active run
+
+- **WHEN** the Creator publishes a script hotfix while adventurers are mid-run on that dungeon
+- **THEN** those runs keep pinned `script_version`; only runs started after publish use the new version
+
+#### Scenario: Invalid Creator edit blocked
+
+- **WHEN** the Creator saves script JSON that fails schema or tier validation
+- **THEN** publish is rejected with errors; live catalog is not updated
 
 The system SHALL persist structured dungeon telemetry for Creator audit and future archivist analysis (see `gnome-guild`). Logging SHALL occur server-side on each meaningful run event.
 

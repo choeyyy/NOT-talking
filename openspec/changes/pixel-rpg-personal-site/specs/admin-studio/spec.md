@@ -57,7 +57,7 @@ After recognition (or manual skip), the Creator SHALL specify where the asset be
 
 1. **Explicit grid** — `sceneId`, `x`, `y` (tile coordinates)
 2. **Interactable binding** — `objectType` + properties (e.g. `tavern_table` + `tableId`, `npc` + `dialogueId`)
-3. **Natural language hint** — e.g. 「余烬酒馆吧台左侧」; server MAY use AI to propose coordinates on that scene, **requiring Creator confirm** before write
+3. **Natural language hint** — e.g. `tavern-hall` bar left; server MAY use AI to propose coordinates on that scene, **requiring Creator confirm** before write
 
 The system MUST NOT auto-publish to live `/world` without an explicit **确认放置** or **发布场景** action by the Creator.
 

@@ -6,7 +6,7 @@
 
 ### Requirement: Tavern scene with table seating
 
-The big world SHALL include a tavern scene (default manifest id **`tavern-hall`**, display name e.g. **余烬酒馆**). Tavern scenes SHALL expose one or more **`tavern_table`** interactables, each with a stable `tableId`. Each table SHALL seat at most **2** adventurers concurrently. An adventurer SHALL **sit at a table** by interacting with a chair/seat at that table while in the tavern scene.
+The big world SHALL include a tavern scene (manifest id **`tavern-hall`** only — no separate invented tavern display name in spec). Tavern scenes SHALL expose one or more **`tavern_table`** interactables, each with a stable `tableId`. Each table SHALL seat at most **2** adventurers concurrently. An adventurer SHALL **sit at a table** by interacting with a chair/seat at that table while in the tavern scene.
 
 #### Scenario: Sit at tavern table
 
@@ -46,6 +46,25 @@ Adventurers seated at the **same** `tavern_table` (`tableId` + `sceneId`) SHALL 
 
 - **WHEN** A and B complete the grilled duck-heart acquaintance ritual at the same table and later A sends persistent DM to B outside the tavern
 - **THEN** the message is accepted per `player-chat` mutual acquaintance rules
+
+### Requirement: Tavern bartender Li-Luang
+
+Scene **`tavern-hall`** SHALL include a static bartender NPC **`li_luang`**, display name **`Li-Luang`** (English only), **grandmother**. Creator-configured fields in admin:
+
+- **Dialogue:** what she **says to players** (includes her **drinks are AA** characterization)
+- **Player address:** how she **calls players** — seed characterization **乖孙**
+
+`mode: static` only. No example lines in this spec.
+
+#### Scenario: Talk to Li-Luang at the bar
+
+- **WHEN** an adventurer interacts with `li_luang` in `tavern-hall`
+- **THEN** a JRPG dialogue shows her configured static lines from the server
+
+#### Scenario: Li-Luang does not split bills server-side
+
+- **WHEN** an adventurer reads Li-Luang's AA dialogue
+- **THEN** no automatic gold split occurs; AA is flavor copy only unless a future tavern bill feature is added
 
 ### Requirement: Duck heart acquaintance ritual
 

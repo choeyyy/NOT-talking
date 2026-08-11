@@ -56,7 +56,7 @@
 - `sanity-action-points`: **（讨论）** SAN、误喝 debuff、每日 AP
 - `world-library`: **（讨论）** 大世界图书馆；看书减 debuff；概率禁书掉 SAN
 - `world-bounties`: **（讨论）** 大世界悬赏栏；每日限量；短剧本 d100 偏加钱；接取耗 AP；接取记录不相识匿名
-- `world-tavern`: **（讨论）** 余烬酒馆同桌临时聊天 + **烤鸭心结缘**；buff；玩家自结识唯一途径
+- `world-tavern`: **（讨论）** `tavern-hall` table chat + **grilled duck heart** acquaintance ritual; buff; player acquaintance path
 
 ### Modified Capabilities
 

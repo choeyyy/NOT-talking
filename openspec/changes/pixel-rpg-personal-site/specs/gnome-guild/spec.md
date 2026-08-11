@@ -240,7 +240,9 @@ When the Creator is offline, gnome agents SHALL remain **dormant** (no autonomou
 
 ### Requirement: Creator approval via conversation
 
-Publication SHALL require explicit Creator consent captured in the guild conversation (natural-language agreement and/or a structured confirm action). Upon approval, the system SHALL atomically: validate and upsert the runtime dungeon catalog (`dungeon_scripts`, optional `dungeon_entrances`), invalidate script loader cache, and create or update a world announcement — **without** application restart.
+Publication SHALL require explicit Creator consent captured in the guild conversation (natural-language agreement and/or a structured confirm action) **or** explicit publish confirm from **`/admin/dungeons`**. Upon approval, the system SHALL atomically: validate and upsert the runtime dungeon catalog (`dungeon_scripts`, optional `dungeon_entrances`), invalidate script loader cache, and create or update a world announcement — **without** application restart.
+
+The Creator MAY edit draft or published script JSON directly in admin; see `dungeons` · Creator manual script edit.
 
 #### Scenario: Creator approves in chat
 

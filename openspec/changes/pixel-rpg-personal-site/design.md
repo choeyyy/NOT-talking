@@ -82,13 +82,14 @@
 | `dungeon_entrance` | 离开 world presence → `/dungeon/[id]` |
 | NPC 交互 | 打开对话 UI（static / agent） |
 
-**NPC（`world-npc-manifest`）— 仅静态 + 之子入口：**
+**NPC（admin / runtime registry）— 静态 + 之子入口：**
+
+- Seed **`li_luang`** · `tavern-hall` · **`Li-Luang`** · grandmother · admin: **dialogue** (AA drinks) + **player address** (乖孙)
+- 创世主之子 — 独立 agent，非 static NPC
 
 ```typescript
-// 普通 NPC — 全部 static
-{ id: 'innkeeper', sceneId: 'tavern-hall', mode: 'static', staticLines: [...] }
-
-// 创世主之子 — 非 manifest 普通 NPC；独立 agent + 侧栏联系人 + hub-plaza 交互
+// 普通 NPC — static；li_luang 见上；其余由 /admin/npcs 维护
+// 创世主之子 — agent binding + hub-plaza 等入口
 ```
 
 **Agent 体系：**
