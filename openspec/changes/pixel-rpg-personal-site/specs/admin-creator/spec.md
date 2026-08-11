@@ -6,7 +6,7 @@ The system SHALL provide a unified **创世主后台** at `/admin/*` as the Crea
 
 The Creator SHALL also reach **all adventurer-facing routes** (`/home`, `/workshop`, `/world`, `/dungeon`, `/gallery`, `/profile`, etc.) from admin navigation or omniscience links for preview and support, bypassing region restrictions where appropriate.
 
-When the Creator logs in, the **primary world and player-visible pages** SHALL be available immediately (same routes adventurers use). Opening guild agent chats (Gnome Guild, Tall Folk) MUST NOT happen automatically on login; those agents wake only when the Creator opens the respective chat panel per `gnome-guild` and `tall-folk-guild`.
+When the Creator logs in, the **primary world and player-visible pages** SHALL be available immediately (same routes adventurers use). Opening **Gnome Guild** chat MUST NOT happen automatically on login; gnome agents wake only when the Creator opens the gnome chat panel per `gnome-guild`. **Tall Folk ops** are already always-on per `tall-folk-guild` — no login wake step required.
 
 #### Scenario: Creator opens admin hub
 
@@ -38,7 +38,8 @@ The Creator admin area SHALL include at minimum these modules (routes may be gro
 | **冒险者名册** | `/admin/users` | User CRUD, party, acquaintance override |
 | **区域权限** | `/admin/regions` | Page access matrix |
 | **世界公告** | `/admin/announcements` | Announcement CRUD |
-| **像素工坊** | `/admin/studio` | Scene build + global asset library (embed `pixel-studio`) |
+| **像素工坊** | `/admin/studio` | Scene build; exports register into asset library |
+| **美术资源库** | **`/admin/assets`** | All art: global + **player** sprites; **标号**, tags, notes, replace PNG — T0 metadata hot update |
 | **场景 / 入口** | `/admin/scenes` | Scene manifest, dungeon entrances, publish |
 | **NPC** | `/admin/npcs` | Dialogue (对玩家说的话), **player address** (对玩家的称呼), sprite, placement — T0 hot update |
 | **聊天 Log** | `/admin/chat-logs` | DM history audit |

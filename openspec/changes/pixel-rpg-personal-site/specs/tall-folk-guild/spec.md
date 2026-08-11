@@ -1,6 +1,6 @@
 ## Status
 
-**DISCUSSION** — 2026-08-11 用户提案；与地精协会对称；见 `discussion-log.md` §M。拍板前 **不纳入 V1 门禁**。
+**DISCUSSION** — 2026-08-11 用户提案；与地精协会对称；见 `discussion-log.md` §M、§N。**长身人运维常启**（2026-08-11 拍板，与之子同级）。
 
 ## ADDED Requirements
 
@@ -15,14 +15,39 @@ The guild SHALL consist of exactly **three** persona agents with distinct `agent
 - **WHEN** the Creator navigates to `/admin/tall-folk` (or linked module from admin hub)
 - **THEN** the UI shows guild chat, open **issue reports**, **runtime patch drafts**, and deploy queue status
 
-### Requirement: Tall Folk visible in big world
+### Requirement: Tall Folk code company visible in big world
 
-Like the gnome guild facade, the big world MAY display a **Tall Folk workshop** landmark visible to adventurers. Non-Creators SHALL be turned away with JRPG dialog (AI + static fallback); functional tools remain Creator-only.
+The big world (`/world`) SHALL display a **Tall Folk code company** (长身人代码公司 / 长身人修会) interactable — visible sprite, door, sign, or scene facade that **all logged-in adventurers** can see and walk to. This world presence is **flavor and world-building**; it is not hidden behind `canSee` party rules unless configured otherwise.
 
-#### Scenario: Adventurer turned away
+Functional Tall Folk tools (chat, patch drafts, deploy queue) remain **Creator-only** via `/admin/tall-folk` or the world entrance when the user is the Creator.
 
-- **WHEN** a non-Creator interacts with the tall folk world entrance
-- **THEN** a refusal dialog is shown and no engineering APIs are exposed
+#### Scenario: Adventurer sees tall folk company in world
+
+- **WHEN** any logged-in adventurer enters a scene that contains a `tall_folk_guild_entrance` object
+- **THEN** the code-company facade is rendered like other world landmarks
+
+### Requirement: Adventurers turned away at the door
+
+Adventurers MUST NOT enter the functional Tall Folk Guild (chat, patch drafts, deploy approve). When an adventurer attempts to enter via the world interactable or any non-Creator API, the system SHALL show a **JRPG-style refusal dialog** with the **canonical static line**:
+
+**「非法闯入请刷卡。」**
+
+This line SHALL be shown **as-is** (no AI generation required for adventurer refusal). Tall Folk refusal MUST NOT expose engineering spoilers or guild internals.
+
+#### Scenario: Adventurer rejected at world entrance
+
+- **WHEN** a non-Creator adventurer interacts with `tall_folk_guild_entrance`
+- **THEN** the dialog shows **「非法闯入请刷卡。」**; Tall Folk chat and patch UI do not open
+
+#### Scenario: Rejection logged
+
+- **WHEN** an adventurer receives a tall folk refusal at the world entrance
+- **THEN** `player_behavior_log` records `tall_folk_guild_rejection` with source `static`
+
+#### Scenario: Creator enters from world
+
+- **WHEN** the Creator interacts with `tall_folk_guild_entrance`
+- **THEN** the full Tall Folk Guild UI opens per this spec (same as navigating to `/admin/tall-folk`)
 
 ### Requirement: Three-tier change model (hot / warm / cold)
 
@@ -90,26 +115,30 @@ The diagnostician tall folk SHALL read Creator-visible logs (`player_behavior_lo
 
 Only `is_admin=true` MAY call tall folk chat, patch draft, or deploy approve APIs.
 
-### Requirement: Lazy wake on Creator chat open
+### Requirement: Tall Folk ops always running
 
-Tall Folk agents SHALL remain **dormant** until the Creator **opens** the Tall Folk Guild chat panel (`/admin/tall-folk` or world entrance). Opening the panel creates a **`tall_folk_session`**.
+Unlike Gnome Guild agents (dormant until the Creator opens their chat panel), **Tall Folk ops** (长身人运维 — the three tall folk persona bindings as the site's **technical maintenance team**) SHALL be **always started** with the main application: bindings are loaded at process boot, tall-folk maintenance routes remain available whenever the site is up, and the agent-worker (if split) MUST keep Tall Folk ops **hot** without requiring the Creator to open a panel first.
 
-On panel close, the server SHALL persist to **`tall_folk_guild_log`**, flush patch/deploy draft state, **then** end the session and return agents to dormant. No background polling after close. See `agent-life`.
+The Creator still **opens `/admin/tall-folk` or the world entrance** to chat and review patch/deploy drafts; "always running" means the **backend ops personas are never dormant** and MAY run background maintenance (log diagnostics, issue drafts) while the Creator is offline or the UI is closed.
 
-#### Scenario: Creator opens tall folk chat
+When the Creator **closes** the Tall Folk chat panel, the server SHALL persist to `tall_folk_guild_log` and flush in-session draft state per `agent-life`, **then** end the **UI session only** — Tall Folk ops bindings **remain resident**.
 
-- **WHEN** the Creator opens the Tall Folk chat UI
-- **THEN** tall folk agents may be invoked for diagnostics and patch proposals in that session
+Background Cursor API for scheduled diagnostics MUST pass through `AgentRouter` and respect `agent-safety` rate limits (separate from gnome guild session caps).
 
-#### Scenario: Creator login without opening tall folk chat
+#### Scenario: Site up with Creator offline
 
-- **WHEN** the Creator logs in and browses `/world` without opening Tall Folk chat
-- **THEN** no Tall Folk Cursor API calls occur
+- **WHEN** the main application is running and error logs exceed threshold while the Creator is offline
+- **THEN** `tall_diagnostician` MAY open or update issue drafts in the background without any Creator UI session
 
-#### Scenario: Creator closes tall folk chat
+#### Scenario: Creator opens tall folk without wake step
 
-- **WHEN** the Creator closes the Tall Folk chat panel
-- **THEN** messages are persisted to `tall_folk_guild_log`, session work is flushed, the session ends, and tall folk agents become dormant
+- **WHEN** the Creator opens `/admin/tall-folk` after site boot
+- **THEN** tall folk agents are immediately available for chat and patch work — no dormancy gate
+
+#### Scenario: Creator closes tall folk chat panel
+
+- **WHEN** the Creator closes the Tall Folk chat UI
+- **THEN** messages and draft snapshot are persisted, the UI session ends, and tall folk ops **remain always-on** for background work and the next panel open
 
 #### Scenario: Adventurer API forbidden
 

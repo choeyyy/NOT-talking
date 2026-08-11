@@ -32,6 +32,8 @@ When `gnome-guild` is enabled, `/workshop` SHALL include a Gnome Guild section f
 
 The system SHALL allow adventurers to create and own personal items (`creations`) with a name, description, sprite reference, and kind (`object` for static items or `creature` for living things).
 
+When a creation sprite is saved or updated, the server SHALL register or update a **`scope: player`** row in `art_assets` (`kind: creation_sprite`, linked to `creations.id`) per **`admin-assets`**.
+
 #### Scenario: Create a static object
 
 - **WHEN** an adventurer saves a new creation with kind `object`, name, description, and sprite

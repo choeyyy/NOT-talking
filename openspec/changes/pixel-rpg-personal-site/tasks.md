@@ -52,6 +52,14 @@
 - [ ] 5.8 `/admin/son` wallet, grant audit, settings
 - [ ] 5.9 `/admin/gnome-guild` link (shared guild UI with workshop)
 - [ ] 5.10 **`/admin/dungeons`** — Creator edit drafts + published `script_json`; T0 publish/hotfix (no gnome required)
+- [ ] 5.11 **`/admin/assets`** — `art_assets` registry; global + player; catalog number, metadata edit, optional PNG replace
+
+## 5b. Admin Asset Library (admin-assets)
+
+- [ ] 5b.1 Create `art_assets` table (scope, owner, kind, asset_number, storage_url, metadata, version)
+- [ ] 5b.2 Build `/admin/assets` UI: filter global/player, search by number/tag, edit details
+- [ ] 5b.3 On player save profile/workshop sprite → upsert player-scoped `art_assets` row
+- [ ] 5b.4 Wire `/admin/npcs` sprite picker to `art_asset_id`; T0 cache invalidate on update
 - [ ] 5.10 Preview links to all adventurer routes as Creator
 - [ ] 5.11 Apply TRPG copy to all admin labels and actions
 
@@ -102,7 +110,7 @@
 - [ ] 10b.4 Creator kill switches in `/admin` per agent class + global
 - [ ] 10b.5 Circuit breaker + static fallbacks (gnome refusal, Son busy line)
 - [ ] 10b.6 Schema validation gate on draft upsert and publish
-- [ ] 10b.7 Chat panel `session/close`: persist logs, flush draft snapshot, then end guild session
+- [ ] 10b.7 Chat panel `session/close`: persist logs, flush draft snapshot; **gnome** → dormant; **Son + Tall Folk ops** → UI session only
 
 ## 11. Player Creations (player-creations) — Phase 1.5a
 
@@ -231,6 +239,14 @@
 - [ ] 23.1 Seed `gnome_plot`, `gnome_engine`, `gnome_archivist` bindings + guild thread (creator + son)
 - [ ] 23.2 `/workshop` Gnome Guild panel (Creator) + world `gnome_guild_entrance` facade (all see; adventurers refused)
 - [ ] 23.2a Random gnome refusal: AI one-liner via binding + manifest static fallback (incl. **「让我来看看是谁没被邀请。」**); log `gnome_guild_rejection`
+- [ ] 23.2b World `tall_folk_guild_entrance` (长身人代码公司); adventurers static refusal **「非法闯入请刷卡。」**; log `tall_folk_guild_rejection`
+
+## 23c. Tall Folk Ops (tall-folk-guild) — V2+ / DISCUSSION
+
+- [ ] 23c.1 Seed `tall_diagnostician`, `tall_engineer`, `tall_releaser` bindings; load at boot (**always-on**, same tier as Son)
+- [ ] 23c.2 `/admin/tall-folk` chat + patch/deploy queue; no dormancy gate on open
+- [ ] 23c.3 Background log diagnostics (scheduled, rate-limited); issue drafts when Creator offline
+- [ ] 23c.4 T0/T1/T2 patch pipeline; T2 requires Creator deploy approve
 - [ ] 23.3 `dungeon_script_drafts` + JSON schema validate; engine gnome → draft API only (no repo writes)
 - [ ] 23.3a Inject `house-coc` d100 rules into gnome_plot/engine/archivist prompts; tier key validation on publish
 - [ ] 23.4 Plot → engine collaboration flow; Son offline facilitation (no publish)

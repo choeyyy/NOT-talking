@@ -13,6 +13,8 @@ The system SHALL allow authenticated users to update their own `display_name`. U
 
 The system SHALL provide layered pixel character customization (e.g., body, hair, clothing, colors) and store selections in `character_config` JSON.
 
+When the composed avatar is generated or updated, the server SHALL register or update a **`scope: player`** row in `art_assets` (`kind: character_sprite`, linked to user id) per **`admin-assets`**.
+
 #### Scenario: User saves character
 
 - **WHEN** a user saves customization choices

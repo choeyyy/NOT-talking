@@ -46,8 +46,9 @@ Static NPC definitions SHALL be loaded from a **runtime registry** (DB table e.g
 | **Dialogue** | What the NPC **says to players** — static lines / dialogue tree (语录) |
 | **Player address** | How the NPC **calls players** — e.g. Li-Luang uses **乖孙** |
 | **Display name, sprite, scene placement** | As before |
+| **Sprite reference** | `art_asset_id` from **`/admin/assets`** catalog (optional) |
 
-Both **dialogue** and **player address** are **Creator-maintained** in admin (no spec example copy). Runtime dialogue UI SHALL apply the configured **player address** when rendering lines (substitution or template slot per implementation).
+Both **dialogue** and **player address** are **Creator-maintained** in admin (no spec example copy). Runtime dialogue UI SHALL apply the configured **player address** when rendering lines (substitution or template slot per implementation). NPC sprite files are managed via **`admin-assets`** when using the shared registry.
 
 **Hot update (T0):** Saving in admin SHALL upsert DB and **invalidate** the server NPC loader cache **without** application restart or redeploy. This is the same tier as gnome dungeon script publish (see `tall-folk-guild` T0).
 

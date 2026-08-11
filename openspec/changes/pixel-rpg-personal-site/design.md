@@ -309,6 +309,8 @@ room:online            → 全局在线 registry（手机列表、创世主神�
 
 **选择：** `POST /api/ai/chat` SSE 流式；`CURSOR_API_KEY` 仅服务端；模型映射表 `composer-2.5` / `grok-4.5`；登录校验 + 可选日限流。
 
+**成本与扩容（§S）：** **不自训模型**；Persona 靠 prompt + binding。玩家增多时 API 费随 **调用次数 × token** 涨 — 靠 **限流、静态 NPC、少量 Agent 入口、模型分层、`/admin/agents` 预算/kill switch** 控量；fine-tune 仅 V2+ 可选且 **不替代** 限流。
+
 ### 11. 视觉：像素 JRPG 主题层 + 侧栏导航
 
 **选择：** 像素字体（中文点阵 + Press Start 2P）、阶梯 box-shadow 边框、JRPG 对话框组件、CSS `image-rendering: pixelated`；shadcn 组件皮肤替换。
@@ -321,7 +323,8 @@ room:online            → 全局在线 registry（手机列表、创世主神�
 /admin
 ├── 神视 / Dashboard     — 在线、定位、快捷聊天
 ├── 冒险者 / 区域 / 公告
-├── 像素工坊 /studio     — 场景搭建 + AI 识别 + 指定位置放置（embed pixel-studio）
+├── 像素工坊 /studio     — 场景搭建；导出写入 **美术资源库**
+├── 美术资源 /assets     — 全局 + 玩家 PNG；标号、标签、换图；T0 热更
 ├── 场景与入口 /scenes   — manifest、副本入口发布
 ├── Log                  — chat-logs · behavior-logs · dungeon 遥测
 ├── 之子 /son            — son_wallet、赠金审计、Agent 设置
@@ -360,7 +363,7 @@ room:online            → 全局在线 registry（手机列表、创世主神�
 
 ### 14. 长身人修会 vs 地精：程序变更怎么「热更」（2026-08-11）
 
-**叙事对称：** **地精**（矮）写 **内容**；**长身人**（高）修 **世界运行机制**（配置、API 行为、前后端缺陷）。
+**叙事对称：** **地精**（矮）写 **内容**；**长身人**（高）修 **世界运行机制**（配置、API 行为、前后端缺陷）。大世界各有一扇 **可见不可入** 的门：地精随机拒台词；长身人代码公司固定 **「非法闯入请刷卡。」**
 
 **核心结论：** 和地精一样 **能免重启的，只有写 DB / 运行时注册表 + 缓存失效**。**TypeScript / React 真改代码 = 冷部署**，不能在同一进程里像改 JSON 剧本那样 live patch。
 
@@ -377,13 +380,14 @@ room:online            → 全局在线 registry（手机列表、创世主神�
 | 阶段 | 建议 |
 |------|------|
 | **V1 个人站** | **单容器** Next（HTTP + WS 同进程）即可；接受 T2 时全站短暂重启 |
-| **V2+（按需 Agent）** | Docker Compose **三进程**：`web`、`ws-gateway` **常跑**；`agent-worker` **常载之子** + guild 仅 session 活跃时处理 |
+| **V2+（按需 Agent）** | Docker Compose **三进程**：`web`、`ws-gateway` **常跑**；`agent-worker` **常载之子 + 长身人运维**；地精仅 guild session 活跃时处理 |
 
 ```
   [常跑] web + ws  ──► 冒险者 + 造物主看 /world 等
-  [常启] 之子      ──► 随主程序启动；冒险者开聊即应
-  [按需] 地精/长身人 ◄── 造物主点开协会聊天窗 ──► guild session
-                     关窗 ──► 写 log + flush ──► dormant
+  [常启] 之子 + 长身人运维 ──► 随主程序启动
+  [按需] 地精 ◄── 造物主点开协会聊天窗 ──► gnome session
+                     关窗 ──► 写 log + flush ──► 地精 dormant
+                     （长身人关窗只关 UI；运维仍常驻）
 ```
 
 ```
@@ -395,7 +399,7 @@ room:online            → 全局在线 registry（手机列表、创世主神�
               ▼            ▼            ▼
         ┌──────────┐ ┌──────────┐ ┌──────────────┐
         │ SQLite/  │ │ws-gateway│ │agent-worker  │
-        │ Postgres │ │ T1 可单杀 │ │之子常启+guild按需│
+        │ Postgres │ │ T1 可单杀 │ │之子+长身人运维常启│
         └──────────┘ └──────────┘ └──────────────┘
               ▲
               └── T0：dungeon_scripts / scene_drafts / runtime_patches 写 DB
@@ -408,9 +412,10 @@ room:online            → 全局在线 registry（手机列表、创世主神�
 **选择：**
 
 - **常跑：** HTTP + WS + 大世界 + 玩家页；Docker/进程 **不因无人登录而退出**
-- **造物主登录：** 与冒险者相同的 **主要世界与可见页面**（可进 `/world` 看地图、进 `/home` 等），外加 `/admin` 神视与后台；**登录事件不触发** 地精/长身人 Cursor 调用
-- **按需唤醒：** 地精协会、长身人修会 — 仅当造物主 **打开** 对应 **聊天窗/协会 UI** 时创建 guild session；**关闭面板** 时 **先落 log + .flush 会话结果**，再结束 session、**禁止** 关窗后台轮询
-- **之子常启：** 随主程序 **一直启动**；造物主不在线时冒险者仍可找之子聊天；之子 **不** 唤醒地精/长身人
+- **造物主登录：** 与冒险者相同的 **主要世界与可见页面**（可进 `/world` 看地图、进 `/home` 等），外加 `/admin` 神视与后台；**登录事件不触发** 地精 Cursor 调用
+- **地精按需唤醒：** 仅当造物主 **打开** 地精协会聊天窗时建 session；**关闭面板** 时 **先落 log + flush** → 地精 dormant
+- **长身人运维常启：** 与 **之子** 同级 — 随主程序启动；可后台读 log / 开 issue；关 `/admin/tall-folk` 面板 **只关 UI session**，运维 binding **不休眠**
+- **之子常启：** 随主程序 **一直启动**；造物主不在线时冒险者仍可找之子聊天；之子 **不** 唤醒地精
 - **神谕：** 登录用户 **点浮层** 才请求（按需）
 
 **相关 spec：** §N `discussion-log.md`；`tall-folk-guild`、`gnome-guild`（§13 地精 T0 边界）
@@ -445,7 +450,7 @@ lib/
 | 按人过滤广播 CPU | 用户数 <30 可接受；后期 Redis pub/sub |
 | Cursor API 模型 id 不确定 | `.env.example` + 可配置 MODEL_MAP |
 | 地精 publish 若依赖代码重启则 Agent 停摆 | **Runtime Dungeon Registry** — DB 剧本 + cache invalidate（§13） |
-| Guild Agent API 空烧 | **按需唤醒** — 仅造物主打开协会聊天窗（§N）；关窗 dormant；**之子除外常启** |
+| Guild Agent API 空烧 | **地精按需唤醒**（§N）；**之子 + 长身人运维常启**（后台 diagnostic 受 agent-safety 限额） |
 | Agent 抽风 / 越权 / 空烧 API | **`agent-safety`** — AgentRouter、工具白名单、发布/部署须确认、限流、熔断、kill switch |
 | 像素中文字体可读性 | 正文 16px+；长文混用半像素字体 |
 | WS 云部署穿透失败 | 文档化 Nginx upgrade；Caddy 备选 |

@@ -27,6 +27,7 @@
 - `auth-session`: 登录墙、session、创世主/冒险者身份、密码认证
 - `admin-creator`: 创世主后台 hub——用户/区域/公告/Party；**/admin/studio** 场景与资产；Log；之子；地精；预览玩家页
 - `admin-studio`: **（讨论）** 画板 AI 识别 + 指定位置放置 + staging 发布
+- `admin-assets`: **（讨论）** 美术资源库——全局 + 玩家资产；线上标号与细节编辑；T0 热更
 - `character-profile`: 冒险者名号、分层捏人、立绘合成与角色卡
 - `page-access`: 页面/区域注册、UserPageAccess 权限校验（路由 + API）
 - `world-announcements`: 世界公告 admin CRUD，登录用户全员可见
@@ -48,7 +49,7 @@
 - `social-visibility`: `canSee()` — 同团或 `user_acquaintances` 互链；玩家自结识仅鸭心结缘
 - `pixel-ui-theme`: 像素 JRPG 设计 tokens、对话框、组件皮肤
 - `gnome-guild`: **（讨论/V2+）** 大世界 **可见** 地精会议；冒险者 **被拒入**；三 Agent 写本；**T0 热更** DB 剧本
-- `tall-folk-guild`: **（讨论/V2+）** 长身人修会；修世界机制/代码；**T0/T1/T2 分档**；T2 须造物主批准 deploy
+- `tall-folk-guild`: **（讨论/V2+）** 长身人修会 / **代码公司**；**运维常启**（与之子同级）；大世界拒入 **「非法闯入请刷卡。」**；T0/T1/T2 分档
 - `world-church`: **（讨论）** 大世界教堂；忏悔留言板；忏悔后特质+
 - `player-inventory`: **（讨论）** 背包（进副本）+ 家里箱子；物品评价与补充描述
 - `player-behavior-log`: **（讨论）** 统一行为 log（评价/副本选择/忏悔/购物/误喝等）

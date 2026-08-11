@@ -4,11 +4,20 @@
 
 The system SHALL represent all persona agents (except the separate oracle tool) using `agent_bindings` records keyed by `target_type` and `target_id`. Chat SHALL route through a shared server-side Cursor API proxy using the binding's `system_prompt` and `model`.
 
-**Guild agents (gnomes, tall folk):** Cursor API calls for these bindings MUST occur only while the Creator has an **active guild chat session** open for that guild type. **Login alone MUST NOT wake guild agents.**
+**Gnome Guild agents:** Cursor API calls for gnome bindings MUST occur only while the Creator has an **active gnome guild chat session** open. **Login alone MUST NOT wake gnome agents.**
 
-**Creator's Son:** SHALL be **always running** with the main app — never dormant. `/api/son/chat` is always available when the site is up; adventurers open the Son UI to message, but the Son backend does not require a wake-up step like guild agents. Son behavior is constrained by `agent-safety` (no publish, grant limits, no admin escalation).
+**Tall Folk ops (长身人运维):** SHALL be **always running** with the main app — never dormant. Tall Folk maintenance routes and background diagnostics remain available when the site is up; the Creator opens `/admin/tall-folk` to chat, but there is no wake-up step like gnomes. Tall Folk behavior is constrained by `agent-safety` (no auto-deploy, Creator approve for T2, rate limits on background jobs).
+
+**Creator's Son:** SHALL be **always running** with the main app — never dormant. `/api/son/chat` is always available when the site is up; adventurers open the Son UI to message, but the Son backend does not require a wake-up step. Son behavior is constrained by `agent-safety` (no publish, grant limits, no admin escalation).
 
 **Other player-initiated agents (awakened creations, oracle):** Invoked when the user opens the chat UI and sends a message (or equivalent explicit action). All routes through `agent-safety` AgentRouter.
+
+**Ad-hoc agent group chat is OUT OF SCOPE:** The Creator MUST NOT assemble arbitrary multi-agent group threads by picking bindings (Son + gnomes + tall folk + NPCs, etc.). Persona chat is limited to **fixed guild threads** (Gnome Guild, Tall Folk Guild) and **1:1** routes per binding. See `discussion-log.md` §R.
+
+#### Scenario: Creator cannot create custom agent group
+
+- **WHEN** the Creator attempts to create a chat room with a custom set of agent bindings
+- **THEN** the feature is unavailable; the server exposes only fixed guild threads and per-binding 1:1 chat endpoints
 
 ### Requirement: Chat panel close flushes then sleeps
 
@@ -16,9 +25,9 @@ When any agent **chat panel** closes (guild, Son, oracle, awakened creation), th
 
 1. **Persist** all messages from the current session to the appropriate server log table (see below)
 2. **Flush** in-session work product — e.g., link latest draft revision, pending publish/deploy proposals, session summary metadata
-3. **Then** end the session (guild agents → **dormant**; Son/oracle → UI session closed but Son backend remains always-on)
+3. **Then** end the **UI session** (gnome agents → **dormant**; Son and **Tall Folk ops** → backend remains always-on; oracle → UI session closed)
 
-Guild agents MUST NOT enter dormant state until steps 1–2 complete successfully or fail with logged error (retry on next open).
+Guild agents (**gnomes only**) MUST NOT enter dormant state until steps 1–2 complete successfully or fail with logged error (retry on next open). Tall Folk ops and Son backends are unaffected by UI session close.
 
 | Chat UI | Server log (Creator-readable where noted) |
 |---------|-------------------------------------------|
@@ -38,7 +47,7 @@ Adventurers MUST NOT read these agent chat logs via API; see `player-chat` histo
 #### Scenario: Creator closes tall folk chat
 
 - **WHEN** the Creator closes the Tall Folk chat panel
-- **THEN** messages are written to `tall_folk_guild_log`, patch draft state is saved, session ends, and tall folk agents become dormant
+- **THEN** messages are written to `tall_folk_guild_log`, patch draft state is saved, the UI session ends, and **Tall Folk ops remain always-on**
 
 #### Scenario: Adventurer closes Son chat
 

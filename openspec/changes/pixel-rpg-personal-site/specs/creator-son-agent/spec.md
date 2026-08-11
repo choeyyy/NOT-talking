@@ -85,13 +85,13 @@ Son replies SHALL use the server-side Cursor API proxy with a dedicated system p
 
 ### Requirement: Son agent always running
 
-Unlike Gnome Guild and Tall Folk agents (dormant until the Creator opens their chat panels), the Creator's Son SHALL be **always started** with the main application: the Son `agent_binding` is loaded at process boot, `/api/son/chat` remains available whenever the site is up, and the agent-worker (if split) MUST keep the Son route **hot** without requiring a Creator or adventurer to open a panel first.
+Unlike **Gnome Guild** agents (dormant until the Creator opens their chat panel), the Creator's Son SHALL be **always started** with the main application: the Son `agent_binding` is loaded at process boot, `/api/son/chat` remains available whenever the site is up, and the agent-worker (if split) MUST keep the Son route **hot** without requiring a Creator or adventurer to open a panel first.
 
 Adventurers still **open the Son chat UI** to send messages; "always running" means the **backend persona is never dormant** and may participate in maintenance flows (e.g., replying when messaged) while the Creator is offline.
 
 When the user **closes** the Son chat panel, the server SHALL persist the thread to Son chat logs per `agent-life` before dismissing the UI session.
 
-The Son MUST NOT wake dormant guild agents (gnomes, tall folk).
+The Son MUST NOT wake dormant **gnome** agents. Tall Folk ops are already always-on and are not "woken" by the Son.
 
 #### Scenario: Site up with no Creator logged in
 
@@ -101,4 +101,4 @@ The Son MUST NOT wake dormant guild agents (gnomes, tall folk).
 #### Scenario: Son does not wake gnomes
 
 - **WHEN** the Son is active and the Creator is offline
-- **THEN** gnome and tall folk agents remain dormant until the Creator opens their respective guild chat panels
+- **THEN** gnome agents remain dormant until the Creator opens the Gnome Guild chat panel

@@ -34,7 +34,7 @@ The big world SHALL support multiple Phaser scenes registered in a code manifest
 
 ### Requirement: World interactable types
 
-World interactables SHALL support `scene_door`, `portal_door`, `dungeon_entrance`, **`bounty_board_entrance`** (悬赏栏 — daily limited bounties per `world-bounties`), **`tavern_table`** (酒馆同桌 — ephemeral chat per `world-tavern`), **`tavern_menu`** (酒馆点单 — grilled duck heart etc.), and **`gnome_guild_entrance`** (地精会议 — visible to all; functional entry Creator-only per `gnome-guild`), plus NPC interactable references per `world-npc-manifest`.
+World interactables SHALL support `scene_door`, `portal_door`, `dungeon_entrance`, **`bounty_board_entrance`** (悬赏栏 — daily limited bounties per `world-bounties`), **`tavern_table`** (酒馆同桌 — ephemeral chat per `world-tavern`), **`tavern_menu`** (酒馆点单 — grilled duck heart etc.), **`gnome_guild_entrance`** (地精会议 — visible to all; functional entry Creator-only per `gnome-guild`), **`tall_folk_guild_entrance`** (长身人代码公司 — visible to all; functional entry Creator-only; adventurers see **「非法闯入请刷卡。」** per `tall-folk-guild`), plus NPC interactable references per `world-npc-manifest`.
 
 #### Scenario: Portal to functional page
 
@@ -70,6 +70,21 @@ World interactables SHALL support `scene_door`, `portal_door`, `dungeon_entrance
 
 - **WHEN** the Creator interacts with `gnome_guild_entrance`
 - **THEN** the full Gnome Guild UI opens per `gnome-guild`
+
+#### Scenario: Tall folk company entrance visible to all
+
+- **WHEN** any logged-in adventurer enters a scene with a `tall_folk_guild_entrance` object
+- **THEN** the long-folk code-company facade is visible on the map
+
+#### Scenario: Non-Creator turned away at tall folk company
+
+- **WHEN** a non-Creator adventurer interacts with `tall_folk_guild_entrance`
+- **THEN** a JRPG refusal dialog shows **「非法闯入请刷卡。」** and the app does not open Tall Folk chat or patch UI
+
+#### Scenario: Creator enters tall folk guild from world
+
+- **WHEN** the Creator interacts with `tall_folk_guild_entrance`
+- **THEN** the full Tall Folk Guild UI opens per `tall-folk-guild`
 
 #### Scenario: Bounty board from world
 

@@ -83,10 +83,14 @@ The server SHALL enforce configurable rate limits:
 |-------|------------------------------|
 | Per adventurer Son chat | e.g. 30 messages / hour |
 | Per user oracle | e.g. 20 messages / hour |
-| Per Creator guild session | e.g. 60 gnome/tall-folk turns / session |
+| Per Creator **gnome** guild session | e.g. 60 gnome turns / session |
+| Tall Folk **background ops** | e.g. 1 scheduled diagnostic / 15 min; cap daily Cursor calls |
+| Per Creator **tall-folk** chat session | e.g. 60 tall-folk turns / session |
 | Global Cursor API | circuit breaker on error rate |
 
 When limits are exceeded, the server SHALL return themed feedback and MUST NOT call Cursor API until the window resets.
+
+The Creator SHOULD configure **daily or global token/call budgets** in `/admin/agents` (implementation detail; see `discussion-log.md` §S). When budget is exhausted, agents return themed maintenance/busy messages without model calls.
 
 #### Scenario: Son spam blocked
 
@@ -98,6 +102,7 @@ When limits are exceeded, the server SHALL return themed feedback and MUST NOT c
 | Context | Cap |
 |---------|-----|
 | Gnome adventurer **refusal** | Short dialog; refusal-only prompt; static fallback |
+| Tall Folk adventurer **refusal** | **Static only** — canonical **「非法闯入请刷卡。」**; no Cursor API |
 | Son player chat | Max tokens per reply; no admin spoilers in prompt context |
 | Oracle | Narrative/hint only; no live DB dumps of other users |
 | Guild draft JSON | Max script size / node count server-side |
@@ -150,7 +155,7 @@ The Son and awakened creation agents MUST NOT:
 - Publish dungeons or patches
 - Modify `UserPageAccess`, party, or acquaintance tables
 - Grant items other than configured gold grants from `son_wallet_gold`
-- Wake dormant guild agents
+- Wake dormant **gnome** guild agents
 - Expose other users' private logs, wallets beyond public game rules, or admin routes
 
 #### Scenario: Son asked to publish dungeon
