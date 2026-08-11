@@ -4,6 +4,52 @@
 
 The system SHALL represent all persona agents (except the separate oracle tool) using `agent_bindings` records keyed by `target_type` and `target_id`. Chat SHALL route through a shared server-side Cursor API proxy using the binding's `system_prompt` and `model`.
 
+**Guild agents (gnomes, tall folk):** Cursor API calls for these bindings MUST occur only while the Creator has an **active guild chat session** open for that guild type. **Login alone MUST NOT wake guild agents.**
+
+**Creator's Son:** SHALL be **always running** with the main app — never dormant. `/api/son/chat` is always available when the site is up; adventurers open the Son UI to message, but the Son backend does not require a wake-up step like guild agents. Son behavior is constrained by `agent-safety` (no publish, grant limits, no admin escalation).
+
+**Other player-initiated agents (awakened creations, oracle):** Invoked when the user opens the chat UI and sends a message (or equivalent explicit action). All routes through `agent-safety` AgentRouter.
+
+### Requirement: Chat panel close flushes then sleeps
+
+When any agent **chat panel** closes (guild, Son, oracle, awakened creation), the client SHALL notify the server (e.g., `POST .../session/close` or reliable `sendBeacon`). The server SHALL **before** marking the session inactive:
+
+1. **Persist** all messages from the current session to the appropriate server log table (see below)
+2. **Flush** in-session work product — e.g., link latest draft revision, pending publish/deploy proposals, session summary metadata
+3. **Then** end the session (guild agents → **dormant**; Son/oracle → UI session closed but Son backend remains always-on)
+
+Guild agents MUST NOT enter dormant state until steps 1–2 complete successfully or fail with logged error (retry on next open).
+
+| Chat UI | Server log (Creator-readable where noted) |
+|---------|-------------------------------------------|
+| Gnome Guild | `gnome_guild_log` |
+| Tall Folk | `tall_folk_guild_log` |
+| Creator's Son | Son chat log (Creator audit) |
+| Oracle | Oracle chat log (per-user, Creator audit) |
+| Awakened creation | Creation owner + Creator audit policy |
+
+Adventurers MUST NOT read these agent chat logs via API; see `player-chat` history restriction.
+
+#### Scenario: Creator closes gnome guild chat
+
+- **WHEN** the Creator closes the Gnome Guild chat panel
+- **THEN** the server persists the thread to `gnome_guild_log`, flushes draft/session snapshot, ends `gnome_guild_session`, and gnome agents become dormant
+
+#### Scenario: Creator closes tall folk chat
+
+- **WHEN** the Creator closes the Tall Folk chat panel
+- **THEN** messages are written to `tall_folk_guild_log`, patch draft state is saved, session ends, and tall folk agents become dormant
+
+#### Scenario: Adventurer closes Son chat
+
+- **WHEN** an adventurer closes the Son chat dialog
+- **THEN** the conversation is appended to server-side Son chat logs; the Son agent remains always-on for the next open
+
+#### Scenario: Close with in-flight AI reply
+
+- **WHEN** the user closes a panel while a streamed reply is incomplete
+- **THEN** the server persists partial assistant content marked `truncated` or waits for stream end within a short grace timeout before flush and session end
+
 #### Scenario: Chat via active binding
 
 - **WHEN** a client requests chat for an entity with an active agent binding
@@ -61,14 +107,33 @@ When a dungeon run exits with ending tier **critical success**, the server SHALL
 - **WHEN** a dungeon script node specifies an explicit soul potion grant (independent of ending tier)
 - **THEN** the server awards one soul potion without requiring the crit-success drop roll
 
+### Requirement: Soul potion misuse separate from awakening
+
+Using soul potion on self (drink / misdrink) SHALL be a distinct action from applying to an eligible static creation. Misdrink handling SHALL be defined in `player-inventory` and logged for Truth Eye.
+
+#### Scenario: Misdrink does not start awakening
+
+- **WHEN** an adventurer misdrinks soul potion
+- **THEN** no `awakening_session` is created
+
 ### Requirement: Creation awakening ritual
 
-An adventurer SHALL consume one `soul_potion` to awaken an owned creation through a three-step server flow: start questions, submit answers, confirm and create binding. Each creation MAY have at most one active agent binding.
+An adventurer SHALL consume one `soul_potion` to awaken an owned creation through a three-step server flow: start questions, submit answers, confirm and create binding. Each creation MAY have at most one active agent binding. Awakening via soul potion SHALL be allowed **only** for creations with `kind=object` (静物). Creations with `kind=creature` (活物) MUST NOT accept soul potion awakening.
 
-#### Scenario: Start awakening
+#### Scenario: Start awakening on static object
 
-- **WHEN** the owner calls awaken start with at least one soul potion and no existing binding on the creation
+- **WHEN** the owner calls awaken start on an owned creation with `kind=object`, at least one soul potion, and no existing binding
 - **THEN** the server creates an `awakening_session` with generated questions based on creation metadata
+
+#### Scenario: Awakening blocked for creature
+
+- **WHEN** the owner calls awaken start on a creation with `kind=creature`
+- **THEN** the server returns an error and does not create a session or consume a soul potion
+
+#### Scenario: Start awakening blocked for wrong kind in UI
+
+- **WHEN** the owner views a creature creation in workshop or home
+- **THEN** the soul potion / awaken action is not offered for that creation
 
 #### Scenario: Submit answers and preview
 

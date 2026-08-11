@@ -9,6 +9,15 @@ The system SHALL provide a `/world` tab as an expandable big-world space whose p
 - **WHEN** an authenticated user navigates to `/world`
 - **THEN** a Phaser canvas loads with collision and the user's character sprite in the default world scene
 
+### Requirement: World canvas fits mobile and desktop viewports
+
+The Phaser game instance SHALL scale to the available main-content area on both phone and desktop while preserving pixel aspect ratio (letterbox/pillarbox as needed). This complements shell responsiveness in `pixel-ui-theme`.
+
+#### Scenario: World on phone
+
+- **WHEN** a user opens `/world` on a mobile browser
+- **THEN** the full game canvas is visible within the viewport without requiring page-level horizontal scroll
+
 ### Requirement: Multi-scene world with scene manifest
 
 The big world SHALL support multiple Phaser scenes registered in a code manifest (`world-scene-manifest`). New scenes SHALL be addable by registering a Tiled map and door links without changing core protocols.
@@ -25,7 +34,7 @@ The big world SHALL support multiple Phaser scenes registered in a code manifest
 
 ### Requirement: World interactable types
 
-World interactables SHALL support `scene_door`, `portal_door`, and `dungeon_entrance` objects, plus NPC interactable references per `world-npc-manifest`.
+World interactables SHALL support `scene_door`, `portal_door`, `dungeon_entrance`, **`bounty_board_entrance`** (悬赏栏 — daily limited bounties per `world-bounties`), **`tavern_table`** (酒馆同桌 — ephemeral chat per `world-tavern`), **`tavern_menu`** (酒馆点单 — grilled duck heart etc.), and **`gnome_guild_entrance`** (地精会议 — visible to all; functional entry Creator-only per `gnome-guild`), plus NPC interactable references per `world-npc-manifest`.
 
 #### Scenario: Portal to functional page
 
@@ -47,6 +56,31 @@ World interactables SHALL support `scene_door`, `portal_door`, and `dungeon_entr
 - **WHEN** an active row exists in `dungeon_entrances` for the current scene
 - **THEN** the world client shows that entrance alongside Tiled `dungeon_entrance` objects without redeploying map assets
 
+#### Scenario: Spirit guild entrance visible to all
+
+- **WHEN** any logged-in adventurer enters a scene with a `gnome_guild_entrance` object
+- **THEN** the guild meeting facade is visible on the map
+
+#### Scenario: Non-Creator turned away at gnome guild
+
+- **WHEN** a non-Creator adventurer interacts with `gnome_guild_entrance`
+- **THEN** a JRPG gnome refusal dialog is shown and the app does not open guild chat or drafts
+
+#### Scenario: Creator enters gnome guild from world
+
+- **WHEN** the Creator interacts with `gnome_guild_entrance`
+- **THEN** the full Gnome Guild UI opens per `gnome-guild`
+
+#### Scenario: Bounty board from world
+
+- **WHEN** an adventurer interacts with `bounty_board_entrance`
+- **THEN** the bounty board UI opens per `world-bounties` showing daily slots and taken-slot records with taker names filtered by `canSee`
+
+#### Scenario: Sit at tavern table
+
+- **WHEN** an adventurer interacts with a seat at `tavern_table` in `tavern-hall`
+- **THEN** the adventurer is seated and table chat opens per `world-tavern`
+
 ### Requirement: Keyboard movement with collision
 
 The system SHALL support keyboard movement (WASD or arrow keys) with tile/building collision on each world scene.
@@ -67,7 +101,12 @@ Online map presence SHALL be scoped to `room:world:{sceneId}`. Adventurers SHALL
 
 ### Requirement: Initial world scene pack
 
-The first release SHALL ship at least these manifest scenes: `hub-plaza` (default spawn), `garden-view`, `tavern-hall`, `shrine-outer`, and `portrait-hall`, with at least one `portal_door` to `/gallery` and at least one `dungeon_entrance` to a registered dungeon.
+The first release SHALL ship at least these manifest scenes: `hub-plaza` (default spawn), `garden-view`, `tavern-hall`, `shrine-outer`, and `portrait-hall`, with at least one `portal_door` to `/gallery` and at least one `dungeon_entrance` to a registered dungeon. A **church** entrance or scene SHALL be added when `world-church` is implemented (see `discussion-log.md` §D). A **library** entrance or scene SHALL be added when `world-library` is implemented (see §E).
+
+#### Scenario: Church entrance when enabled
+
+- **WHEN** `world-church` is enabled and an adventurer interacts with the church entrance
+- **THEN** the church confession UI opens per `world-church` spec
 
 #### Scenario: Default spawn
 

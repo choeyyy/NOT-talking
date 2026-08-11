@@ -14,14 +14,19 @@ The system SHALL provide a dedicated `/workshop` tab for adventurers to create, 
 - **WHEN** an adventurer creates a new item from `/workshop`
 - **THEN** the creation is saved and appears in both the workshop list and the home display cabinet inventory
 
-### Requirement: Workshop hosts Spirit Guild entry (future)
+### Requirement: Workshop hosts Gnome Guild entry (future)
 
-When `spirit-guild` is enabled, `/workshop` SHALL include a Spirit Guild section for the Creator (see `spirit-guild` capability). Adventurers SHALL NOT access this section.
+When `gnome-guild` is enabled, `/workshop` SHALL include a Gnome Guild section for the Creator (see `gnome-guild` capability). The same guild is **visible** in `/world` for all adventurers, but non-Creators are **turned away at the door** with gnome refusal dialog — they do not access this workshop section.
 
 #### Scenario: Creator sees guild on workshop
 
-- **WHEN** the Creator opens `/workshop` and spirit guild is enabled
-- **THEN** a navigation entry or panel leads to the Spirit Guild without replacing creation CRUD
+- **WHEN** the Creator opens `/workshop` and gnome guild is enabled
+- **THEN** a navigation entry or panel leads to the Gnome Guild without replacing creation CRUD
+
+#### Scenario: Adventurer has no workshop guild panel
+
+- **WHEN** a non-Creator opens `/workshop`
+- **THEN** the Gnome Guild management panel is not shown (world facade may still be visible separately)
 
 ### Requirement: Player-owned creations
 
@@ -78,6 +83,20 @@ For creations with kind `creature`, the owner SHALL configure a list of short ph
 
 - **WHEN** a creature has no phrases configured
 - **THEN** it does not emit random speech bubbles
+
+### Requirement: Soul potion not for creatures
+
+Creations with `kind=creature` (活物) SHALL NOT be eligible for soul potion awakening (see `agent-life`). Creatures express liveness through configured `phrases` only unless the Creator grants agent life through separate admin flows (out of player potion scope).
+
+#### Scenario: No awaken option for creature
+
+- **WHEN** the owner manages a creature creation in `/workshop` or `/home`
+- **THEN** soul potion awakening controls are hidden or disabled and API calls to awaken are rejected
+
+#### Scenario: Object creation may awaken when potion available
+
+- **WHEN** the owner manages an `object` creation and holds at least one soul potion
+- **THEN** the UI MAY offer the awakening flow per `agent-life`
 
 ### Requirement: Sell creation at revival platform
 

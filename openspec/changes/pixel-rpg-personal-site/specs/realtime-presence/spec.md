@@ -2,7 +2,7 @@
 
 ### Requirement: Online presence contexts
 
-The system SHALL track each connected adventurer's presence context as `home` or `world`. World context SHALL include `sceneId` and map coordinates. Home context SHALL NOT include world coordinates.
+The system SHALL track each connected adventurer's presence context as `home` or `world`. World context SHALL include `sceneId` and map coordinates. Home context SHALL NOT include world coordinates. When seated at a tavern table, world context MAY additionally include `tableId` and `seated=true` per `world-tavern`.
 
 #### Scenario: User enters home tab
 

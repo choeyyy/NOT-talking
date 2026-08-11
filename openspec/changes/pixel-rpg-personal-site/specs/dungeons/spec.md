@@ -1,5 +1,19 @@
 ## ADDED Requirements
 
+### Requirement: Dungeon entry costs action points
+
+Entering or starting a new dungeon run SHALL cost **daily action points** per `sanity-action-points`. Continuing an in-progress run on the same day MAY be exempt from additional entry cost (configurable).
+
+#### Scenario: Enter dungeon with AP
+
+- **WHEN** an adventurer enters a dungeon with sufficient daily AP
+- **THEN** entry AP is deducted and the run starts or resumes
+
+#### Scenario: Enter dungeon without AP
+
+- **WHEN** an adventurer attempts new dungeon entry with 0 daily AP
+- **THEN** entry is rejected with themed feedback
+
 ### Requirement: Text script dungeon gameplay
 
 Dungeons SHALL be played as interactive text scripts (文字剧本) rendered in the dungeon tab. Each script SHALL consist of nodes with narrative text, optional choices, optional d100 checks, and effects on player stats.
@@ -16,17 +30,193 @@ Dungeons SHALL be played as interactive text scripts (文字剧本) rendered in 
 
 ### Requirement: d100 roll checks
 
-When a script node includes a check, the system SHALL roll an integer from 1 to 100 inclusive and resolve graded outcomes against a configured difficulty (DC) and optional stat modifier.
+When a script node includes a check, the system SHALL roll an integer from 1 to 100 inclusive and resolve graded outcomes using the shared **`house-coc`** profile in `trpg-mechanics`.
+
+Check nodes SHALL declare at minimum `dc`, optional `stat` modifier, and an `outcomes` object keyed by canonical tier names. Ending nodes SHOULD use the same tier keys when gated on crit results (e.g., soul potion drop on exit `crit_success`).
 
 #### Scenario: Player triggers roll node
 
 - **WHEN** an adventurer reaches a node with a d100 check and confirms the roll action
-- **THEN** the system generates a roll 1–100, displays the value, and resolves success tier text
+- **THEN** the system generates a roll 1–100, resolves tier via shared resolver, displays roll value and tier label, and applies the matching outcome branch
 
 #### Scenario: Graded outcomes
 
 - **WHEN** a roll is resolved
-- **THEN** the outcome tier (e.g., critical success, success, failure, critical failure) is determined per dungeon script configuration and shown to the player
+- **THEN** the outcome tier (`crit_success`, `extreme_success`, `hard_success`, `success`, `failure`, `crit_failure`) is determined by the shared resolver and shown to the player
+
+### Requirement: Party dungeon runs with acquainted players
+
+Adventurers MAY enter the **same** dungeon script together as a **party run** when all members are **mutual acquaintances** (`canSee` both ways). Dungeons SHALL **not** ship separate solo vs multiplayer script ids; one published script serves all party sizes. When `party_size > 1`, the server SHALL merge **party check rules** (harder DC) with optional **`partyVariants`** on each node — alternate copy, choices, effects, and branches authored for multi-member context (see below). Gnome plot/engine agents MUST co-author these variants per `gnome-guild`.
+
+**Party limits (default, manifest-overridable):** min 1, max **4** members per run. Non-acquainted invitees MUST be rejected.
+
+#### Scenario: Solo enter unchanged
+
+- **WHEN** an adventurer enters a dungeon alone
+- **THEN** the run behaves as today with `party_size = 1` and no party DC adjustment unless the node sets explicit solo overrides
+
+#### Scenario: Party invite at entrance
+
+- **WHEN** an adventurer at a dungeon entrance invites mutual acquaintances and all accept
+- **THEN** a shared `dungeon_party_run` starts with pinned `script_version`; each member pays entry AP (default 1 AP each); all share the same current node
+
+#### Scenario: Stranger cannot join party run
+
+- **WHEN** user A invites user B to a dungeon party and `canSee(A,B)` is false
+- **THEN** the invite is rejected with themed feedback
+
+#### Scenario: Shared progression
+
+- **WHEN** the party reaches a choice or check node
+- **THEN** all members see the same narrative advance; check nodes collect one roll per present member before resolving the party outcome
+
+### Requirement: Party check on d100 nodes
+
+Check nodes MAY include an optional **`partyCheck`** block. When `party_size > 1` and `partyCheck.enabled` is true (default **true** when block omitted and global default enabled), the server SHALL:
+
+1. Use the node's **`dc`** as **`baseDc`** (same number for solo preview and party display).
+2. Compute **`soloEffectiveDc`** per member = `baseDc` ± that member's stat modifier.
+3. Compute **`partyEffectiveDc`** = `baseDc` + stat modifier of the **acting member** (or **best stat among party** if `partyCheck.statMode: "best"`) + **`dcDeltaFromPartySize`**.
+4. Roll **once per party member** (each uses their own wallet `attrs` for stat mod).
+5. Resolve **party outcome tier** from individual tiers via `partyCheck.resolution`.
+6. Display in UI **both** solo preview and full party breakdown (see scenarios).
+
+**Default `dcDeltaFromPartySize` (global manifest `party-check-manifest`, overridable per node):**
+
+| `party_size` | Default Δ to effective DC |
+|--------------|---------------------------|
+| 1 | 0 |
+| 2 | **+5** |
+| 3 | **+10** |
+| 4 | **+15** |
+
+Positive Δ raises effective DC — **more party members make checks harder**. Party difficulty is **not** DC alone; nodes SHOULD also define **`partyVariants`** for narrative and mechanical differences when multiple adventurers face the same beat.
+
+**`partyVariants` resolution:** When `party_size >= 2`, the server selects the variant with the **largest** `minPartySize` such that `minPartySize <= party_size`. If none match, the base node fields apply. Variant fields **override or merge** with the base node as documented per field type.
+
+| Field (in variant) | Behavior |
+|--------------------|----------|
+| `text` | Replaces base narrative text for party |
+| `choices` | Replaces base choices entirely when present |
+| `onEnter` | Additional or replacement immediate effects (`hp`, `gold`, `attrs`, `flags`) before roll/choice |
+| `partyCheck` | Overrides base `partyCheck` for this node |
+| `outcomes` | On check nodes, merges with or replaces tier outcomes for party context |
+| `next` | On linear nodes, override next node id |
+
+#### Scenario: Party variant text at passage node
+
+- **WHEN** a party of 2 enters a node with base text for solo and a `partyVariants` entry `{ "minPartySize": 2, "text": "两人并排通过时横梁吱呀作响……" }`
+- **THEN** all members see the party variant text, not the solo base text
+
+#### Scenario: Party variant adds onEnter hazard
+
+- **WHEN** a party of 3 triggers a variant with `onEnter: { "hp": -2, "applyEffects": "each" }`
+- **THEN** each member loses 2 wallet HP before any check or choice on that node
+
+#### Scenario: Party of 4 uses highest matching variant
+
+- **WHEN** variants exist for `minPartySize` 2 and 3 only and party size is 4
+- **THEN** the server applies the `minPartySize: 3` variant (largest matching threshold)
+
+#### Scenario: Solo ignores partyVariants
+
+- **WHEN** `party_size === 1`
+- **THEN** base node fields apply; `partyVariants` are ignored
+
+**`partyCheck.resolution` modes (enum):**
+
+| Mode | Party tier = |
+|------|----------------|
+| `best_roll` (default) | Best tier among members (crit_success > extreme_success > … > crit_failure) |
+| `worst_roll` | Worst tier among members |
+| `majority_success` | `success` if ≥ half of members achieve `success` or better; else `failure` |
+| `any_success` | `success` if any member achieves `success` or better; else `failure` |
+
+#### Scenario: UI shows solo preview and party rolls on same base DC
+
+- **WHEN** a party of 2 reaches a check with `baseDc: 60` and default party Δ
+- **THEN** the dungeon log shows: (a) **单人预览** — each viewer's hypothetical solo line using `soloEffectiveDc` at `baseDc 60`; (b) **队伍检定** — each member's actual roll against `partyEffectiveDc` (e.g. **65** for 2 players); (c) **队伍结果** — resolved party tier and applied outcome branch
+
+#### Scenario: Solo run hides party panel
+
+- **WHEN** `party_size === 1`
+- **THEN** only the single roll against `soloEffectiveDc` is shown; party panel is omitted
+
+#### Scenario: Party check logged per member
+
+- **WHEN** a party check resolves
+- **THEN** `dungeon_run_log` records one `dice_roll` row per member with `baseDc`, `soloEffectiveDc`, `partyEffectiveDc`, roll, tier, and final `partyTier`
+
+#### Scenario: Outcome effects on party
+
+- **WHEN** a party check outcome specifies `hp: -10` and `partyCheck.applyEffects: "each"` (default)
+- **THEN** each member's wallet HP decreases by 10 unless the outcome overrides `applyEffects: "roller"` (only rolling member) or `leader`
+
+#### Example narrative node with partyVariants
+
+```json
+{
+  "id": "narrow-gap",
+  "type": "narrative",
+  "text": "你侧身挤过石缝。",
+  "next": "chamber",
+  "partyVariants": [
+    {
+      "minPartySize": 2,
+      "text": "两个人先后挤过，第二人经过时石缝刮破了背包。",
+      "onEnter": { "run_gold": -5, "applyEffects": "leader" }
+    },
+    {
+      "minPartySize": 3,
+      "text": "三个人无法同时通过；你们轮流侧行，头顶不断落下碎石。",
+      "onEnter": { "hp": -2, "applyEffects": "each" },
+      "next": "chamber-noisy"
+    }
+  ]
+}
+```
+
+#### Example check node (authoring)
+
+```json
+{
+  "id": "rusty-lock",
+  "type": "check",
+  "text": "一把锈锁挡住了去路。",
+  "dc": 60,
+  "stat": "dex",
+  "partyCheck": {
+    "enabled": true,
+    "dcDeltaPerExtraMember": 5,
+    "resolution": "best_roll",
+    "showSoloPreview": true
+  },
+  "partyVariants": [
+    {
+      "minPartySize": 2,
+      "text": "两个人同时动手撬锁，金属声在通道里回荡——更容易惊动守卫。",
+      "partyCheck": { "dcDeltaPerExtraMember": 8 },
+      "outcomes": {
+        "failure": { "next": "alarm-loud", "hp": -8, "applyEffects": "each" }
+      }
+    }
+  ],
+  "outcomes": {
+    "success": { "next": "door-open", "gold": 10 },
+    "failure": { "next": "alarm", "hp": -5 }
+  }
+}
+```
+
+#### Scenario: Publish validates partyCheck and partyVariants schema
+
+- **WHEN** a draft node includes unknown `partyCheck.resolution` or invalid `partyVariants.minPartySize`
+- **THEN** publish validation fails with a schema error
+
+#### Scenario: Co-op dungeon warns on sparse partyVariants
+
+- **WHEN** script root has `supportsParty: true` and fewer than the configured minimum nodes define `partyVariants`
+- **THEN** publish returns a Creator-visible warning per `gnome-guild` co-op checklist (soft gate)
 
 ### Requirement: HP uses persistent wallet during dungeon
 
@@ -178,11 +368,11 @@ At least one sample script SHALL be playable in V1 (via seed or bootstrap).
 
 ### Requirement: Spirit and admin publish path
 
-Script publication from the Spirit Guild or Creator admin SHALL write only to the runtime catalog (`dungeon_scripts`, optional `dungeon_entrances`) and related announcements. Publication MUST NOT require modifying repository source files or restarting the application process.
+Script publication from the Gnome Guild or Creator admin SHALL write only to the runtime catalog (`dungeon_scripts`, optional `dungeon_entrances`) and related announcements. Publication MUST NOT require modifying repository source files or restarting the application process.
 
-#### Scenario: Engine spirit draft stays in DB
+#### Scenario: Engine gnome draft stays in DB
 
-- **WHEN** `spirit_engine` completes a script draft
+- **WHEN** `gnome_engine` completes a script draft
 - **THEN** the output is stored in `dungeon_script_drafts` only; no TypeScript manifest or filesystem deploy artifact is produced
 
 #### Scenario: Approved publish is atomic and live
@@ -192,7 +382,7 @@ Script publication from the Spirit Guild or Creator admin SHALL write only to th
 
 ### Requirement: Dungeon run telemetry logging
 
-The system SHALL persist structured dungeon telemetry for Creator audit and future archivist analysis (see `spirit-guild`). Logging SHALL occur server-side on each meaningful run event.
+The system SHALL persist structured dungeon telemetry for Creator audit and future archivist analysis (see `gnome-guild`). Logging SHALL occur server-side on each meaningful run event.
 
 **`dungeon_run_log`** entries SHALL include at minimum: run id, user id, dungeon id, node id, event type (e.g., `dice_roll`, `hp_delta`, `gold_delta`, `attr_delta`, `exit_settlement`), payload JSON, and timestamp.
 

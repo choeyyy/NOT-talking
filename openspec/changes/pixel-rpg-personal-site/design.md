@@ -12,6 +12,7 @@
 - 展馆 opt-in；双 context 在线 presence；`canSee()` 过滤
 - 创世主神视、定位、与任意冒险者 DM；登录用户可用 AI 悬浮窗
 - SQLite 起步，单 Docker 镜像可部署
+- **跨端：** 手机 + PC 可用；侧栏移动端折叠；浏览器缩放 100%–200% 不破版；手机暗色主题 + `prefers-color-scheme: dark`
 
 **Non-Goals:**
 
@@ -56,9 +57,9 @@
 
 **Page 注册：** 代码内 `site-pages.ts` 启动 sync 至 `pages` 表（含 map 元数据），admin 矩阵勾选。
 
-**不相识：** MVP 采用 **Party（团）**——不同团互不相识；同团内可见。表：`parties`, `user_parties`。创世主不在任何团限制中。
+**不相识：** Party（团）+ **`user_acquaintances`（结识链）**。`canSee` = 同团 **或** 互链。玩家自结识 **仅** 酒馆鸭心结缘（`world-tavern`）；创世主 admin 可改团/直接加链。
 
-**默认新用户：** 加入「主世界」默认团（同团互相可见），创世主可改团实现隔离。
+**默认新用户：** **单人团**（陌生人开局）；创世主可把多人编入同一团实现批量可见。
 
 ### 5. 捏人：LPC 式分层 + Canvas 合成
 
@@ -98,19 +99,17 @@
 | 神谕 | V1 | 工具，无 binding |
 | 造物 | V2 | 灵魂药水 + 觉醒三 step |
 | NPC/世界物品 | V2 | 创世主 `admin/life/grant` |
-| 精灵×3 | V2+ | seed 固定 binding；见下表 |
+| 地精×3 | V2+ | seed 固定 binding；见下表 |
 
-**三精灵（精灵协会）：**
+**三地精（地精协会）：**
 
 | binding id | 角色 | 职责 |
 |------------|------|------|
-| `spirit_plot` | 剧情精灵 | 剧情、节点叙事、分支与结局设计 |
-| `spirit_engine` | 工程精灵 | 剧本 JSON 落库、schema 校验、数值调优（DC/hp/gold/exp） |
-| `spirit_archivist` | 档案精灵 | 已发布剧本管理；分析投骰/hp·金币流水/通关结算；依赖三类 log |
+| `gnome_plot` | 剧情地精 | 剧情、节点叙事、分支与结局设计 |
+| `gnome_engine` | 工程地精 | 剧本 JSON 落库、schema 校验、数值调优（DC/hp/gold/exp） |
+| `gnome_archivist` | 档案地精 | 已发布剧本管理；分析投骰/hp·金币流水/通关结算；依赖三类 log |
 
-**精灵协会（V2+，讨论中）：** `/workshop` 内入口；上表三精灵协作；与造物主、造物主之子 **群聊**；造物主离线时可继续起草，**仅造物主在对话中同意后** 发布到副本并更新公告。档案精灵读 `dungeon_ui_log`、`spirit_guild_log`、`dungeon_run_log`。详见 `discussion-log.md` §B、`specs/spirit-guild/spec.md`。
-
-**灵魂药水（V2）：** 副本结局 `crit_success` → `roll < 0.35` → `inventory +1 soul_potion`（概率可配置）。
+**地精协会（V2+）：** `/workshop` 造物主面板 + 大世界 `gnome_guild_entrance`（全员可见）；冒险者点击 → **随机地精 AI 短拒**（失败回退 manifest 静态句）；造物主可进。详见 `discussion-log.md` §B、`specs/gnome-guild/spec.md`。
 
 **赋活后端：** 见 `specs/agent-life/spec.md` — `agent_bindings` + `awakening_sessions` + shared `AgentRouter`.
 
@@ -118,14 +117,21 @@
 
 **Ideas 保留：** 副本 GM Agent、wit 影响估价、商店 broker。
 
-**运行时剧本（Runtime Dungeon Registry）：** 精灵/工程路径 **只写 DB**，publish 后 **免重启** 生效。Bootstrap 样本可留在仓库 seed；线上 catalog 以 `dungeon_scripts` 为准。进行中的 run 钉住 `script_version`。详见 `discussion-log.md` §B.1、`specs/dungeons/spec.md`。
+**运行时剧本（Runtime Dungeon Registry）：** 地精/工程路径 **只写 DB**，publish 后 **免重启** 生效。详见 `discussion-log.md` §B.1。
+
+**教堂 / 背包 / 行为 Log / 真理之眼（§D）：** …
+
+**SAN / 行动点（§E）：** 每日 **28 AP**；误喝 debuff；图书馆/睡觉耗 AP；商店不耗 AP；**行动点数色子** 使用随机 **+0～5**，**每日限购 3 个**。
+
+**灵魂药水（V2）：** 副本结局 `crit_success` → `roll < 0.35` → `inventory +1 soul_potion`。**仅静物 `object` 可觉醒**；活物不可；误喝单独 log。
 
 **副本（文字剧本跑团）：**
 
 ```
 /world 副本入口 ──▶ /dungeon/[id]
                       │
-                      ├─ 节点：叙事文本 / 选项 / d100 检定
+                      ├─ 节点：叙事文本 / 选项 / d100 检定（可选 partyCheck：同 baseDc，**人越多 effectiveDc 越高**）
+                      ├─ 结识者组队：同一 run；partyCheck（人越多 DC 越高）+ partyVariants（地精写多人节点变动）
                       ├─ HP：wallet hp 即时扣加
                       ├─ attrs：wallet 属性 ±（力敏智魅等）
                       ├─ dungeon_exp：仅本 run，决定结局分支
@@ -306,7 +312,24 @@ room:online            → 全局在线 registry（手机列表、创世主神�
 
 **选择：** 像素字体（中文点阵 + Press Start 2P）、阶梯 box-shadow 边框、JRPG 对话框组件、CSS `image-rendering: pixelated`；shadcn 组件皮肤替换。
 
-**布局：** 登录后 **左侧边栏** 主导航（家、造物、世界、副本、展馆、公告、角色、admin）；**不用顶栏 Tab**。主内容区在右侧；顶区仅可选世界公告 banner，不放路由 Tab。
+**布局：** 登录后 **左侧边栏** 主导航（家、造物、世界、副本、展馆、公告、角色）；**创世主** 额外入口 **⚙ 后台** → `/admin/*`。**不用顶栏 Tab**。
+
+**创世主后台（`/admin`）** — 统一指挥台，非冒险者功能集中在此：
+
+```
+/admin
+├── 神视 / Dashboard     — 在线、定位、快捷聊天
+├── 冒险者 / 区域 / 公告
+├── 像素工坊 /studio     — 场景搭建 + AI 识别 + 指定位置放置（embed pixel-studio）
+├── 场景与入口 /scenes   — manifest、副本入口发布
+├── Log                  — chat-logs · behavior-logs · dungeon 遥测
+├── 之子 /son            — son_wallet、赠金审计、Agent 设置
+├── 地精协会 /gnome-guild — 群聊、草案、发布剧本
+├── 赋活 /life           — V2+
+└── 预览玩家页           — 跳转 /home /world /workshop …（全站可见）
+```
+
+冒险者 **不能** 进 `/admin`；场景 **只在后台搭**，玩家在 `/world` 玩。捏人 `/profile`、造物 `/workshop` 仍在玩家侧。
 
 ```
 ┌──────────┬────────────────────────────────┐
@@ -316,22 +339,80 @@ room:online            → 全局在线 registry（手机列表、创世主神�
 │ 🗺 世界  │                                │
 │ ⚔ 副本   │                    [神谕][聊天] │
 │ …        │                                │
+│ ⚙ 后台   │  ← 仅创世主：/admin 全功能      │
 └──────────┴────────────────────────────────┘
 ```
 
-移动端：侧栏可折叠为像素菜单钮（Phase 2 polish）。
+移动端：侧栏可折叠为像素菜单钮（**V1 兼容**，见 `pixel-ui-theme`）。整站暗色主题为默认；手机端 dark tokens + 尊重 `prefers-color-scheme: dark`；布局须兼容浏览器缩放至 200%。
 
 ### 13. 副本剧本：运行时注册表（免重启）
 
-**选择：** 可玩剧本以 DB **`dungeon_scripts`** 为权威来源；`DungeonScriptLoader` 按 id 加载 JSON；精灵 Publish **只写 DB + invalidate 缓存**，不修改仓库 manifest、不重启进程。
+**选择：** 可玩剧本以 DB **`dungeon_scripts`** 为权威来源；`DungeonScriptLoader` 按 id 加载 JSON；地精 Publish **只写 DB + invalidate 缓存**，不修改仓库 manifest、不重启进程。
 
-**Bootstrap：** 仓库内示例 JSON 仅用于 **seed migration** 灌入首条 `dungeon_scripts`；之后精灵/造物主热更均走 DB。
+**Bootstrap：** 仓库内示例 JSON 仅用于 **seed migration** 灌入首条 `dungeon_scripts`；之后地精/造物主热更均走 DB。
 
 **版本：** `dungeon_scripts.version` 递增；**有人正在跑的 run 不更新**——`dungeon_runs.script_version` 开局钉住，整局沿用旧剧本；仅 **新开局** 加载 catalog 最新版。
 
 **入口：** `dungeon_entrances` 表（scene_id, position, dungeon_id, label）；Tiled 静态 `dungeon_entrance` 与 DB 入口 **合并解析**；新本可仅 DB 挂入口。
 
-**工程精灵边界：** 只产出/更新 `dungeon_script_drafts` 与校验后的 JSON；**禁止**生成 TypeScript、migration 或要求 redeploy 的制品。
+**工程地精边界：** 只产出/更新 `dungeon_script_drafts` 与校验后的 JSON；**禁止**生成 TypeScript、migration 或要求 redeploy 的制品。
+
+### 14. 长身人修会 vs 地精：程序变更怎么「热更」（2026-08-11）
+
+**叙事对称：** **地精**（矮）写 **内容**；**长身人**（高）修 **世界运行机制**（配置、API 行为、前后端缺陷）。
+
+**核心结论：** 和地精一样 **能免重启的，只有写 DB / 运行时注册表 + 缓存失效**。**TypeScript / React 真改代码 = 冷部署**，不能在同一进程里像改 JSON 剧本那样 live patch。
+
+| 档位 | 叫什么 | 例子 | 怎么更 | 停机 |
+|------|--------|------|--------|------|
+| **T0 热更** | Runtime config | 场景门目标、NPC 台词 patch、`feature_flags`、副本 cache invalidate | 写 DB → `invalidate` | 无 |
+| **T1 温更** | 子进程重启 | Agent prompt、WS 广播规则、队列 worker | 只重启 **`agent-worker`** 或 **`ws-gateway`** | 数秒；WS 重连 |
+| **T2 冷更** | 代码发布 | 改 API 路由、React 页、migration | 长身人出 **patch/PR 草案** → 造物主批准 → CI 构建 → **滚动替换 `web` 容器** | ~30s 滚动；进行中副本仍钉版本 |
+
+**禁止：** 长身人 Agent **直接**改生产机上的 `.ts`/`.tsx` 或 exec 重启整站（安全 + 可审计）。
+
+**要不要分几个后端？**
+
+| 阶段 | 建议 |
+|------|------|
+| **V1 个人站** | **单容器** Next（HTTP + WS 同进程）即可；接受 T2 时全站短暂重启 |
+| **V2+（按需 Agent）** | Docker Compose **三进程**：`web`、`ws-gateway` **常跑**；`agent-worker` **常载之子** + guild 仅 session 活跃时处理 |
+
+```
+  [常跑] web + ws  ──► 冒险者 + 造物主看 /world 等
+  [常启] 之子      ──► 随主程序启动；冒险者开聊即应
+  [按需] 地精/长身人 ◄── 造物主点开协会聊天窗 ──► guild session
+                     关窗 ──► 写 log + flush ──► dormant
+```
+
+```
+                    ┌─────────────┐
+  冒险者浏览器 ─────►│ web (Next)  │◄─── T2 滚动发布（前后端 bundle）
+                    └──────┬──────┘
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────────┐
+        │ SQLite/  │ │ws-gateway│ │agent-worker  │
+        │ Postgres │ │ T1 可单杀 │ │之子常启+guild按需│
+        └──────────┘ └──────────┘ └──────────────┘
+              ▲
+              └── T0：dungeon_scripts / scene_drafts / runtime_patches 写 DB
+```
+
+**长身人三地精式分工（草案）：** 诊断长身人（读 log 开 issue）→ 工程长身人（出 T0 JSON 或 T2 patch）→ 发布长身人（排队 deploy；T2 须造物主点批准）。
+
+### 15. 运行时：主程序常跑 · 造物主视野 · Agent 按需唤醒（2026-08-11）
+
+**选择：**
+
+- **常跑：** HTTP + WS + 大世界 + 玩家页；Docker/进程 **不因无人登录而退出**
+- **造物主登录：** 与冒险者相同的 **主要世界与可见页面**（可进 `/world` 看地图、进 `/home` 等），外加 `/admin` 神视与后台；**登录事件不触发** 地精/长身人 Cursor 调用
+- **按需唤醒：** 地精协会、长身人修会 — 仅当造物主 **打开** 对应 **聊天窗/协会 UI** 时创建 guild session；**关闭面板** 时 **先落 log + .flush 会话结果**，再结束 session、**禁止** 关窗后台轮询
+- **之子常启：** 随主程序 **一直启动**；造物主不在线时冒险者仍可找之子聊天；之子 **不** 唤醒地精/长身人
+- **神谕：** 登录用户 **点浮层** 才请求（按需）
+
+**相关 spec：** §N `discussion-log.md`；`tall-folk-guild`、`gnome-guild`（§13 地精 T0 边界）
 
 ### 12. 项目结构（建议）
 
@@ -349,7 +430,9 @@ lib/
   world-scene-manifest.ts
   dungeons/
     script-loader.ts   # DB runtime load + cache invalidate
-    script-schema.ts   # JSON schema validate（精灵/engine 共用）
+    script-schema.ts   # JSON schema + tier key validate（地精/engine/publish 共用）
+    d100-resolver.ts   # house-coc 共享判定
+    gnome-d100-rules.md # 注入三地精 system prompt 的规则摘要
   home/             # 家 UI（V1 DOM 房间）
 ```
 
@@ -360,7 +443,9 @@ lib/
 | Phaser + WS 增加复杂度与 bundle | 动态 import；Phase 分 deliver |
 | 按人过滤广播 CPU | 用户数 <30 可接受；后期 Redis pub/sub |
 | Cursor API 模型 id 不确定 | `.env.example` + 可配置 MODEL_MAP |
-| 精灵 publish 若依赖代码重启则 Agent 停摆 | **Runtime Dungeon Registry** — DB 剧本 + cache invalidate（§13） |
+| 地精 publish 若依赖代码重启则 Agent 停摆 | **Runtime Dungeon Registry** — DB 剧本 + cache invalidate（§13） |
+| Guild Agent API 空烧 | **按需唤醒** — 仅造物主打开协会聊天窗（§N）；关窗 dormant；**之子除外常启** |
+| Agent 抽风 / 越权 / 空烧 API | **`agent-safety`** — AgentRouter、工具白名单、发布/部署须确认、限流、熔断、kill switch |
 | 像素中文字体可读性 | 正文 16px+；长文混用半像素字体 |
 | WS 云部署穿透失败 | 文档化 Nginx upgrade；Caddy 备选 |
 | Party 无法表达同团两人不见 | V2 加 pairwise 例外表 |
@@ -380,10 +465,11 @@ lib/
 
 ## Open Questions
 
-见 **`discussion-log.md`**（赋活 §A、精灵协会 §B、技术项 §C）。摘要：
+见 **`discussion-log.md`**（赋活 §A、地精协会 §B、技术项 §C）。摘要：
 
-- **赋活：** 药水概率、crit_success 定义、觉醒 vs phrases、复活台卖赋活造物、之子赠金边界
-- **精灵协会：** ~~三精灵分工~~、~~工程落代码~~、~~B11 热更~~（进行中不更新）；剧本范围、审批解析、B10
+- **赋活：** 药水概率、crit_success 定义、静物觉醒 UI、复活台卖赋活静物、之子赠金；~~活物用药~~（A6 已决）
+- **地精协会：** B2/B4/B5/B6/B8/B10 等
+- **教堂/真理之眼：** 误喝后果、忏悔可见性、Truth Eye 触发与实现（§D）
 - Grok 4.5 是否与 Composer 2.5 共用同一 Cursor API endpoint（仅换 model 参数）——实现时对照 Cursor 文档填写 `MODEL_MAP`
 - 创世主在地图上对玩家是否可见特殊 sprite，或完全隐形仅神视列表——建议 V1：玩家看不见创世主，创世主看见全员
-- 移动端虚拟方向键——Phase 2 polish
+- 移动端虚拟方向键——Phase 2 polish（**布局/缩放/暗色** 仍属 V1，见 `pixel-ui-theme`）

@@ -8,7 +8,7 @@
 
 ## 2. Database Schema
 
-- [ ] 2.1 Create `users` table (…, hp, max_hp, gold, attrs JSON, is_dead, character_config, home_config, …)
+- [ ] 2.1 Create `users` table (…, hp, max_hp, gold, satiety, max_satiety, attrs JSON, is_dead, character_config, home_config, …)
 - [ ] 2.2 Create `pages` table and `user_page_access` junction table
 - [ ] 2.3 Create `parties` and `user_parties` tables for social visibility
 - [ ] 2.4 Create `announcements` table (title, body, is_published, pinned, expires_at)
@@ -18,7 +18,7 @@
 - [ ] 2.7a Create `dungeon_scripts` (id, label, script_json, version, is_published, published_at, source_draft_id)
 - [ ] 2.7b Create `dungeon_entrances` (scene_id, position, dungeon_id, label, is_active) — runtime entrances, merge with Tiled
 - [ ] 2.7c Create `dungeon_run_log`, `dungeon_ui_log` tables (archivist telemetry)
-- [ ] 2.7d Create `dungeon_script_drafts`, `spirit_guild_log` (spirit-guild; can defer migration to Phase 23)
+- [ ] 2.7d Create `dungeon_script_drafts`, `gnome_guild_log` (gnome-guild; can defer migration to Phase 23)
 - [ ] 2.8 Create `son_wallet` or settings row for `son_wallet_gold` + grant audit table
 - [ ] 2.9 Create `inventory_items`, `agent_bindings`, `awakening_sessions` tables
 - [ ] 2.10 Implement admin seed script for first Creator account
@@ -40,17 +40,26 @@
 
 ## 5. Creator Admin (admin-creator)
 
-- [ ] 5.1 Build `/admin` layout with Creator-themed navigation and `is_admin` guard
+- [ ] 5.1 Build `/admin` hub sidebar: 神视、用户、区域、公告、studio、scenes、logs、son、gnome-guild、玩家页预览
 - [ ] 5.2 Implement user CRUD API and adventurer roster UI
 - [ ] 5.3 Implement region permission matrix UI and API
-- [ ] 5.4 Implement party CRUD and user party assignment UI
-- [ ] 5.5 Apply TRPG copy to all admin labels and actions
+- [ ] 5.4 Implement party CRUD, acquaintance override, user party assignment UI
+- [ ] 5.5 Embed pixel studio at `/admin/studio`（apply 时新做 UI；spec: `admin-studio` §K）
+- [ ] 5.5a **`POST /api/admin/studio/recognize`** + **`/place`** + staging
+- [ ] 5.5b Scene publish → `public/assets` + manifest; audit log
+- [ ] 5.6 `/admin/scenes` manifest + dungeon_entrances + import studio JSON
+- [ ] 5.7 `/admin/chat-logs` + `/admin/behavior-logs` (+ dungeon log summary)
+- [ ] 5.8 `/admin/son` wallet, grant audit, settings
+- [ ] 5.9 `/admin/gnome-guild` link (shared guild UI with workshop)
+- [ ] 5.10 Preview links to all adventurer routes as Creator
+- [ ] 5.11 Apply TRPG copy to all admin labels and actions
 
 ## 6. Social Visibility (social-visibility)
 
-- [ ] 6.1 Implement `canSee(viewer, target)` with party-based rules and Creator bypass
-- [ ] 6.2 Assign new users to default party on creation
-- [ ] 6.3 Unit-test canSee for same-party, cross-party, and Creator cases
+- [ ] 6.1 Implement `canSee(viewer, target)` — same party OR mutual `user_acquaintances`; Creator bypass
+- [ ] 6.2 Assign new users to **solo default party** on creation (stranger-by-default)
+- [ ] 6.3 Unit-test canSee for same-party, cross-party, tavern-acquaintance, and Creator cases
+- [ ] 6.4 `user_acquaintances` table + Creator admin CRUD override
 
 ## 7. Character Profile & Customization (character-profile)
 
@@ -72,6 +81,10 @@
 - [ ] 9.2 Build protected app shell with **left sidebar** nav (家, 造物, 世界, 副本, 展馆, 公告, 角色…); no top tab bar
 - [ ] 9.3 Ensure avatars use pixelated rendering when scaled
 - [ ] 9.4 Style access-denial and error states with TRPG copy
+- [ ] 9.5 Responsive shell: collapsible sidebar `<1024px`, touch targets, no horizontal scroll ≥320px
+- [ ] 9.6 Browser zoom 100%–200%: rem/clamp layout, floating widgets reflow
+- [ ] 9.7 Mobile dark theme tokens + `prefers-color-scheme: dark`; no light flash on first paint
+- [ ] 9.8 Document viewport meta + manual QA checklist (iPhone Safari, Android Chrome, desktop 1280/200% zoom)
 
 ## 10. AI Oracle (ai-oracle)
 
@@ -79,6 +92,16 @@
 - [ ] 10.2 Build floating oracle widget in root layout (logged-in only)
 - [ ] 10.3 Add model selector (composer-2.5, grok-4.5) and streaming UI
 - [ ] 10.4 Add basic per-user rate limiting for AI requests
+
+## 10b. Agent Safety (agent-safety)
+
+- [ ] 10b.1 Implement `AgentRouter`: binding lookup, rate limits, output caps, audit hook
+- [ ] 10b.2 Tool allowlist per agent class; block disallowed model tool calls
+- [ ] 10b.3 Structured confirm endpoints for publish / patch / deploy (chat-only approval insufficient)
+- [ ] 10b.4 Creator kill switches in `/admin` per agent class + global
+- [ ] 10b.5 Circuit breaker + static fallbacks (gnome refusal, Son busy line)
+- [ ] 10b.6 Schema validation gate on draft upsert and publish
+- [ ] 10b.7 Chat panel `session/close`: persist logs, flush draft snapshot, then end guild session
 
 ## 11. Player Creations (player-creations) — Phase 1.5a
 
@@ -122,16 +145,21 @@
 
 ## 15. Dungeons & TRPG (dungeons + trpg-mechanics) — Phase 1.5c
 
-- [ ] 15.1 Seed sample dungeon JSON into `dungeon_scripts` via migration (bootstrap only; not the spirit publish path)
+- [ ] 15.1 Seed sample dungeon JSON into `dungeon_scripts` via migration (bootstrap only; not the gnome publish path)
 - [ ] 15.2 Build `/dungeon/[id]` JRPG log UI (text, choices, roll button)
 - [ ] 15.2a Implement `DungeonScriptLoader` (DB load + short TTL cache + invalidate on publish)
-- [ ] 15.3 Implement server-side d100 roll + tier resolver (`lib/d100-resolver.ts`)
+- [ ] 15.3 Implement `d100-resolver.ts` with `house-coc` profile + tier fallback; wire to script-schema tier keys
 - [ ] 15.4 Apply wallet hp/attrs immediately; track dungeon_exp and run flags
 - [ ] 15.5 Implement ending resolver (conditions on exp, attrs, flags)
 - [ ] 15.6 Death flow: is_dead, redirect to world revival spawn, block re-entry
 - [ ] 15.7 Persist dungeon_runs with `script_version` pinned at start; merge run_gold on successful exit
-- [ ] 15.8 Persist `dungeon_run_log` and `dungeon_ui_log` per dungeons spec (feeds 档案精灵 later)
-- [ ] 15.9 `POST /api/admin/dungeons/publish` — upsert runtime catalog, no restart (used by spirit-guild later)
+- [ ] 15.8 Persist `dungeon_run_log` and `dungeon_ui_log` per dungeons spec (feeds 档案地精 later)
+- [ ] 15.9 Party run: acquaintance invite at entrance; shared node; `dungeon_party_runs` + members
+- [ ] 15.10 `party-check-manifest.ts` + `resolvePartyCheck()`; per-member dice_roll logs
+- [ ] 15.11 Check node `partyCheck` + `partyVariants` schema; UI solo preview + party breakdown (§J)
+- [ ] 15.11a Runtime merge `partyVariants` (text/onEnter/outcomes/next); log `party_size` in `dungeon_run_log`
+- [ ] 15.11b Publish warn when `supportsParty` and sparse `partyVariants`; gnome prompt co-op checklist
+- [ ] 15.12 `POST /api/admin/dungeons/publish` — upsert runtime catalog, no restart (used by gnome-guild later)
 
 ## 16. World Revival (world-revival) — Phase 1.5c
 
@@ -189,18 +217,72 @@
 - [ ] 22.4 Server prompt builder from creation + answers; insert `agent_bindings`
 - [ ] 22.5 `POST /api/creations/:id/chat` and shared `AgentRouter`
 - [ ] 22.6 `POST /api/admin/life/grant` for Creator NPC/item bindings
-- [ ] 22.7 Home UI: use potion on creation, awakening wizard, chat awakened creation
+- [ ] 22.7 Home UI: use potion on **object-only** creation, awakening wizard, chat awakened creation
 - [ ] 22.8 Block selling creations with active binding at revival platform
 
-## 23. Spirit Guild (spirit-guild) — V2+ / DISCUSSION
+## 23. Gnome Guild (gnome-guild) — V2+ / DISCUSSION
 
-> 需求已记入 `discussion-log.md` §B 与 `specs/spirit-guild/spec.md`；B1 三精灵分工已定；实现前需拍板 B2–B10。
+> 需求已记入 `discussion-log.md` §B 与 `specs/gnome-guild/spec.md`；B1 三地精分工已定；实现前需拍板 B2–B10。
 
-- [ ] 23.1 Seed `spirit_plot`, `spirit_engine`, `spirit_archivist` bindings + guild thread (creator + son)
-- [ ] 23.2 `/workshop` Spirit Guild panel: chat + draft list + archivist report area
-- [ ] 23.3 `dungeon_script_drafts` + JSON schema validate; engine spirit → draft API only (no repo writes)
+- [ ] 23.1 Seed `gnome_plot`, `gnome_engine`, `gnome_archivist` bindings + guild thread (creator + son)
+- [ ] 23.2 `/workshop` Gnome Guild panel (Creator) + world `gnome_guild_entrance` facade (all see; adventurers refused)
+- [ ] 23.2a Random gnome refusal: AI one-liner via binding + manifest static fallback (incl. **「让我来看看是谁没被邀请。」**); log `gnome_guild_rejection`
+- [ ] 23.3 `dungeon_script_drafts` + JSON schema validate; engine gnome → draft API only (no repo writes)
+- [ ] 23.3a Inject `house-coc` d100 rules into gnome_plot/engine/archivist prompts; tier key validation on publish
 - [ ] 23.4 Plot → engine collaboration flow; Son offline facilitation (no publish)
-- [ ] 23.5 `spirit_guild_log` persistence; Creator-only read API
+- [ ] 23.5 `gnome_guild_log` persistence; Creator-only read API
 - [ ] 23.6 Approval → publish API → `dungeon_scripts` + entrances + announcement + cache invalidate (no restart)
 - [ ] 23.7 Archivist tool: aggregate `dungeon_run_log` / `dungeon_ui_log` by dungeon id
 - [ ] 23.8 Hotfix draft flow for published dungeons (versioned replace after Creator approve)
+
+## 24. Church, Inventory, Behavior Log, Truth Eye — DISCUSSION (§D)
+
+> 见 `discussion-log.md` §D 与四个 capability spec；实现前需拍板 D1–D9。
+
+- [ ] 24.1 `item_instances` (backpack | home_chest) + personal description field
+- [ ] 24.2 Backpack vs chest UI at `/home`; backpack loads into dungeon runs
+- [ ] 24.3 Item obtain evaluation prompt + `item_review` log
+- [ ] 24.4 Soul potion: separate drink vs apply-to-object; `soul_potion_misdrink` log
+- [ ] 24.5 World church scene/entrance + confession board + trait bonus + cooldown
+- [ ] 24.6 `player_behavior_log` table + shop/dungeon/church/inventory hooks
+- [ ] 24.7 Truth Eye: read logs → adjust attrs → audit; wire attr modifiers into checks and drop rolls
+- [ ] 24.8 Home chest UI alongside existing cabinet/creations (keep creations separate per D7)
+
+## 25. SAN, Action Points, Library, Sleep — DISCUSSION (§E)
+
+- [ ] 25.1 `users.san`, `max_san`; `user_debuffs`; `daily_action_points` (max **28**); `ap_dice_purchases_today` (cap **3**)
+- [ ] 25.2 Misdrink: consume potion, SAN loss, 3-day 2× SAN loss debuff
+- [ ] 25.3 Daily AP reset to 28; block library/sleep/dungeon entry when AP=0
+- [ ] 25.4 World library scene + read action + disturbing book roll + logs
+- [ ] 25.5 Home sleep action + debuff duration reduction + logs
+- [ ] 25.6 Dungeon new-entry AP cost; script SAN loss respects 2× debuff
+- [ ] 25.7 Config: daily AP=28, AP dice roll uniform **0–5**, shop dice daily limit **3**
+- [ ] 25.8 Shop catalog: action point dice; shop entry/purchase exempt from AP (E7)
+- [ ] 25.9 Use dice → roll 0–5, add to daily AP + `ap_dice_use` log (payload includes roll)
+
+## 26. World Bounties — DISCUSSION (§H)
+
+> 见 `discussion-log.md` §H 与 `specs/world-bounties/spec.md`。
+
+- [ ] 26.1 `bounty-manifest` + daily pool refresh; `bounty_board_state` (slot, taker, status)
+- [ ] 26.2 World `bounty_board_entrance` + board UI (open / taken / completed)
+- [ ] 26.3 Accept: AP deduct, personal daily cap, slot lock; `bounty_accept` log
+- [ ] 26.4 Short bounty run UI (reuse dungeon engine, `run_kind=bounty`, wallet gold direct)
+- [ ] 26.5 Taker display: `canSee` → name vs 「不相识的冒险者」; Creator always real name
+- [ ] 26.6 `bounty_settle` log + completed slot on board
+- [ ] 26.7 Config defaults for pool size N and per-user accept cap M (H1)
+
+## 27. World Tavern Table Chat — DISCUSSION (§I)
+
+> 见 `discussion-log.md` §I 与 `specs/world-tavern/spec.md`。
+
+- [ ] 27.1 `tavern_table` interactables in `tavern-hall` Tiled map; seat/unseat state
+- [ ] 27.2 WS room `room:tavern:{sceneId}:{tableId}`; send only while seated
+- [ ] 27.3 Table chat UI distinct from DM / Son / oracle; strangers allowed same table
+- [ ] 27.4 Ephemeral delivery (memory/TTL only); **no** `messages` rows; clear client on unseat
+- [ ] 27.5 Table roster shows display names for seated strangers; no map canSee grant
+- [ ] 27.6 Block persistent DM after tavern-only contact; max **2** seats/table (I1 decided)
+- [ ] 27.7 `tavern_menu` — buy 2× duck heart; pending ritual order
+- [ ] 27.8 Sit-together invite flow（「你要和我坐同桌吗？」）; same-scene target (I7)
+- [ ] 27.9 Dual bond eat → `user_acquaintances` + **two attr bonuses** each; solo eat → **satiety** only
+- [ ] 27.10 Ritual cancel: uneaten duck hearts stay with purchaser; solo eat in tavern (I6 decided)

@@ -2,7 +2,7 @@
 
 ### Requirement: Mutual chat between acquaintances
 
-The system SHALL allow two adventurers to send direct messages to each other when they are mutual acquaintances: `canSee(A,B)` and `canSee(B,A)` are both true (typically same party).
+The system SHALL allow two adventurers to send direct messages to each other when they are mutual acquaintances: `canSee(A,B)` and `canSee(B,A)` are both true (via same party, mutual `user_acquaintances` from tavern ritual, or Creator admin link).
 
 #### Scenario: Acquaintances exchange messages
 
@@ -18,6 +18,20 @@ The system SHALL allow two adventurers to send direct messages to each other whe
 
 - **WHEN** user A attempts to message user B and `canSee(A,B)` is false
 - **THEN** the system returns 403 with a themed error
+
+### Requirement: Tavern table ephemeral chat
+
+Tavern **same-table** chat SHALL be governed by `world-tavern`, not this requirement. Table chat bypasses stranger DM restrictions while seated but MUST NOT use the `messages` table or persistent DM APIs documented below.
+
+#### Scenario: Tavern table chat not in messages table
+
+- **WHEN** strangers exchange messages at the same tavern table
+- **THEN** those lines are delivered via the tavern table channel only and are not persisted as direct messages
+
+#### Scenario: Post-tavern persistent DM still blocked
+
+- **WHEN** two strangers chatted at a tavern table and later one attempts persistent DM outside the table
+- **THEN** the persistent message API applies `canSee` and rejects if false
 
 ### Requirement: Creator's Son chat bypass
 
@@ -101,7 +115,7 @@ Adventurers on `/home` SHALL open live chat with online mutual acquaintances via
 
 ### Requirement: Message persistence for audit
 
-The system SHALL persist all direct messages with sender, recipient, body, and timestamp in the database for audit purposes.
+The system SHALL persist all **direct messages** (persistent DM and Creator/Son threads) with sender, recipient, body, and timestamp in the database for audit purposes. **Tavern table chat** per `world-tavern` is excluded and MUST NOT be written to this table.
 
 #### Scenario: Message stored on send
 

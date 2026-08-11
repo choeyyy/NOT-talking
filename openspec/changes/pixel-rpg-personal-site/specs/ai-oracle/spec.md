@@ -49,3 +49,12 @@ The oracle MUST NOT grant gold or use the Son persona. Creator's Son chat uses a
 
 - **WHEN** an adventurer opens the floating oracle
 - **THEN** the interface is labeled as oracle/shrine tool, not Creator's Son
+
+### Requirement: Oracle chat persisted on panel close
+
+When the user closes the oracle floating panel, the server SHALL persist session messages to oracle chat logs (Creator-auditable) per `agent-life`.
+
+#### Scenario: User closes oracle panel
+
+- **WHEN** a logged-in user closes the oracle widget
+- **THEN** the conversation is written to server-side oracle logs

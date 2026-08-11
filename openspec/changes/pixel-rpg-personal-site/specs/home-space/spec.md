@@ -111,3 +111,22 @@ The system SHALL store home layout in `home_config` JSON including placements an
 
 - **WHEN** a new adventurer account is created
 - **THEN** `home_config` defaults to empty placements and a starter room template
+
+### Requirement: Sleep at home for debuff recovery
+
+The home space SHALL offer a **sleep** action that costs **daily action points** per `sanity-action-points`. Sleeping SHALL reduce remaining `misdrink_frail_mind` debuff duration by a configured amount and SHALL be logged to `player_behavior_log`.
+
+#### Scenario: Sleep with AP available
+
+- **WHEN** the owner initiates sleep at home with remaining daily AP
+- **THEN** AP decreases, debuff remaining duration decreases, and `home_sleep` is logged
+
+#### Scenario: Sleep blocked without AP
+
+- **WHEN** the owner attempts sleep with 0 daily AP
+- **THEN** the action is rejected with themed feedback
+
+#### Scenario: Sleep without active misdrink debuff
+
+- **WHEN** the owner sleeps without `misdrink_frail_mind` active
+- **THEN** sleep may still cost AP with minor recovery or rest flavor only per configuration
